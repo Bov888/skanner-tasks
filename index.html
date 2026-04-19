@@ -3,355 +3,954 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>ScannerPlanner</title>
+<title>ScannerTasks</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Literata:ital,wght@0,300;0,400;0,500;1,300&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
-:root {
-  --bg: #fafaf8; --surface: #f4f3ef; --surface2: #eceae4;
-  --border: #e2e1db; --text: #1a1917; --muted: #6b6963;
-  --accent: #2d5a27; --accent-light: #e8f0e6;
-  --e-low: #6b8f71; --e-med: #b07d3a; --e-high: #8b2010;
+/* ══ VARIABLES — точна копія ScannerPlaner ══ */
+:root{
+  --bg:#fafaf8;--surface:#f4f3ef;--border:#e2e1db;
+  --text:#1a1917;--muted:#6b6963;
+  --accent:#2d5a27;--accent-light:#e8f0e6;--accent-mid:#4a8a42;
+  --error:#8b2010;
+  --e-low:#6b8f71;--e-med:#b07d3a;--e-high:#8b2010;
 }
-[data-theme=dark] {
-  --bg: #141412; --surface: #1e1d1b; --surface2: #252422;
-  --border: #2e2d2a; --text: #e8e6e0; --muted: #8a8880;
-  --accent: #6ab05f; --accent-light: #1e2e1c;
-}
-
-* { margin: 0; padding: 0; box-sizing: border-box; }
-body {
-  background: var(--bg); color: var(--text);
-  font-family: 'Literata', serif; font-weight: 300;
-  height: 100vh; overflow: hidden; display: flex; flex-direction: column;
+[data-theme=dark]{
+  --bg:#141412;--surface:#1e1d1b;--border:#2e2d2a;
+  --text:#e8e6e0;--muted:#8a8880;
+  --accent:#6ab05f;--accent-light:#1e2e1c;--accent-mid:#4a8a42;
+  --error:#e05040;
+  --e-low:#4a8a42;--e-med:#c9903e;--e-high:#e05040;
 }
 
-/* ── ТОРBAR & NAVIGATION ── */
-.topbar {
-  height: 56px; display: flex; align-items: center; padding: 0 1.5rem; gap: 1rem;
-  border-bottom: 1px solid var(--border); background: var(--bg);
-}
-.logo { font-size: 1.1rem; flex: 1; cursor: pointer; font-weight: 400; }
-.logo span { color: var(--accent); font-style: italic; }
-
-.ctx-bar { display: flex; border-bottom: 1px solid var(--border); background: var(--bg); }
-.ctx-tab {
-  font-family: 'JetBrains Mono', monospace; font-size: .65rem; text-transform: uppercase;
-  color: var(--muted); background: none; cursor: pointer; padding: 1rem 1.5rem;
-  border: none; border-bottom: 2px solid transparent; transition: .2s;
-}
-.ctx-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
-.ctx-tab.drag-over { background: var(--accent-light); border-bottom-color: var(--accent); }
-
-.filter-bar { 
-  display: flex; gap: 1rem; padding: 0.5rem 1.5rem; background: var(--surface); 
-  border-bottom: 1px solid var(--border); align-items: center;
+*{margin:0;padding:0;box-sizing:border-box;border:none;outline:none;}
+html{font-size:16px;}
+body{
+  background:var(--bg);color:var(--text);
+  font-family:'Literata',Georgia,serif;font-weight:300;
+  height:100vh;height:100dvh;
+  overflow:hidden;display:flex;flex-direction:column;
+  transition:background .3s,color .3s;
 }
 
-/* ── BOARD ── */
-.app-body { flex: 1; display: flex; overflow: hidden; }
-#board { display: flex; width: 100%; padding: 1.2rem; gap: 1.2rem; align-items: stretch; }
-
-.col {
-  flex: 1; min-width: 280px; background: var(--surface);
-  border: 1px solid var(--border); border-radius: 4px;
-  display: flex; flex-direction: column; transition: background .2s;
+/* ══ AUTH ══ */
+#auth-gate{
+  position:fixed;inset:0;background:var(--bg);z-index:9000;
+  display:none;align-items:center;justify-content:center;padding:1.5rem;
 }
-.col.drag-over { background: var(--surface2); border: 1px dashed var(--accent); }
-.col-head { padding: 0.8rem 1rem; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
-.col-title { font-family: 'JetBrains Mono', monospace; font-size: .65rem; text-transform: uppercase; display: flex; align-items: center; gap: .5rem; }
-.col-dot { width: 8px; height: 8px; border-radius: 50%; }
-.col-body { flex: 1; overflow-y: auto; padding: 0.8rem; }
-
-/* ── CARDS ── */
-.tcard {
-  background: var(--bg); border: 1px solid var(--border); border-radius: 3px;
-  padding: 1rem; margin-bottom: 0.8rem; cursor: grab; position: relative;
-  transition: opacity 0.3s;
+.auth-card{
+  background:var(--surface);padding:2.5rem;border-radius:3px;
+  border:1px solid var(--border);width:100%;max-width:360px;
 }
-.tcard:active { cursor: grabbing; }
-.tcard::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; display: none; }
-.tcard[data-e=low]::before { background: var(--e-low); display: block; }
-.tcard[data-e=medium]::before { background: var(--e-med); display: block; }
-.tcard[data-e=high]::before { background: var(--e-high); display: block; }
+.auth-logo{font-family:'Literata',serif;font-size:1.4rem;font-weight:300;
+  letter-spacing:-.02em;margin-bottom:2rem;text-align:center;}
+.auth-logo span{color:var(--accent);font-style:italic;}
 
-.tcard.is-stale { opacity: 0.5; border-style: dashed; }
-.stale-icon { float: right; font-size: 0.8rem; opacity: 0.6; }
-
-.tc-title { font-size: .95rem; line-height: 1.4; margin-bottom: .4rem; }
-.tc-meta { font-family: 'JetBrains Mono', monospace; font-size: .55rem; color: var(--muted); text-transform: uppercase; }
-
-/* ── UI ELEMENTS ── */
-.ctrl-btn {
-  background: var(--bg); border: 1px solid var(--border); color: var(--muted);
-  font-size: .6rem; font-family: 'JetBrains Mono', monospace; cursor: pointer;
-  padding: .4rem .7rem; border-radius: 2px; text-transform: uppercase;
+/* ══ TOPBAR — ідентичний ScannerPlaner ══ */
+.topbar{
+  height:52px;min-height:52px;display:flex;align-items:center;
+  padding:0 1rem;gap:.75rem;
+  border-bottom:1px solid var(--border);
+  background:var(--bg);flex-shrink:0;z-index:200;
 }
-.ctrl-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
-.quick-in { width: 100%; padding: 0.7rem; border: 1px solid var(--border); font-family: 'Literata'; font-size: 0.85rem; background: var(--bg); }
-
-#auth-gate, .modal {
-  position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 1000;
-  display: none; align-items: center; justify-content: center; backdrop-filter: blur(2px);
+.site-title{
+  font-family:'Literata',serif;font-size:1.1rem;font-weight:400;
+  letter-spacing:-.02em;color:var(--text);
+  display:flex;align-items:center;gap:.5rem;
+  flex:1;cursor:pointer;background:none;
 }
-#auth-gate { display: flex; background: var(--bg); }
-.mcard { background: var(--bg); padding: 2rem; width: 90%; max-width: 400px; border: 1px solid var(--border); }
-.inp { width: 100%; padding: 0.8rem; margin-bottom: 1rem; border: 1px solid var(--border); font-family: 'Literata'; background: var(--surface); color: var(--text); }
-.pbtn { width: 100%; padding: 1rem; background: var(--accent); color: #fff; border: none; font-family: 'JetBrains Mono'; cursor: pointer; text-transform: uppercase; }
+.site-title span{color:var(--accent);font-style:italic;}
 
-@media (max-width: 800px) { #board { flex-direction: column; overflow-y: auto; } .col { flex: none; } }
+/* Icon btn — ідентичний */
+.ibtn{
+  background:none;border:1px solid var(--border);color:var(--muted);
+  cursor:pointer;display:flex;align-items:center;justify-content:center;
+  width:32px;height:32px;border-radius:2px;flex-shrink:0;
+  transition:border-color .15s,color .15s;touch-action:manipulation;
+}
+.ibtn:active,.ibtn:hover{border-color:var(--accent);color:var(--accent);}
+.ibtn svg{width:16px;height:16px;}
+
+/* Theme toggle — ідентичний */
+.theme-btn{
+  background:var(--accent-light);border:1px solid var(--accent);color:var(--accent);
+  font-size:.6rem;font-family:'JetBrains Mono',monospace;
+  cursor:pointer;padding:.3rem .6rem;border-radius:2px;
+  letter-spacing:.06em;text-transform:uppercase;
+  white-space:nowrap;flex-shrink:0;touch-action:manipulation;
+}
+.theme-btn:hover{opacity:.7;}
+
+/* Спецкнопки в хедері */
+.hbtn{
+  font-family:'JetBrains Mono',monospace;font-size:.58rem;
+  letter-spacing:.06em;text-transform:uppercase;
+  border:1px solid var(--border);color:var(--muted);
+  background:none;cursor:pointer;padding:.3rem .6rem;
+  border-radius:2px;white-space:nowrap;flex-shrink:0;
+  transition:border-color .15s,color .15s;touch-action:manipulation;
+}
+.hbtn:hover{border-color:var(--accent);color:var(--accent);}
+.hbtn.on{background:var(--accent-light);border-color:var(--accent);color:var(--accent);}
+
+/* ══ CONTEXT TABS — стиль filter-row з ScannerPlaner ══ */
+.ctx-bar{
+  display:flex;align-items:center;
+  border-bottom:1px solid var(--border);
+  background:var(--bg);flex-shrink:0;
+  overflow-x:auto;scrollbar-width:none;
+}
+.ctx-bar::-webkit-scrollbar{display:none;}
+.ctx-tab{
+  font-family:'JetBrains Mono',monospace;font-size:.58rem;
+  letter-spacing:.08em;text-transform:uppercase;
+  color:var(--muted);background:none;cursor:pointer;
+  padding:.65rem 1.1rem;
+  border-bottom:2px solid transparent;
+  transition:color .15s,border-color .15s;
+  white-space:nowrap;flex-shrink:0;touch-action:manipulation;
+  /* Drop target */
+  position:relative;
+}
+.ctx-tab:hover{color:var(--accent);}
+.ctx-tab.active{color:var(--accent);border-bottom-color:var(--accent);}
+.ctx-tab.dov{background:var(--accent-light);border-bottom-color:var(--accent);color:var(--accent);}
+.badge{
+  display:inline-flex;align-items:center;justify-content:center;
+  min-width:15px;height:15px;padding:0 3px;
+  background:var(--surface);color:var(--muted);
+  border-radius:7px;font-size:.48rem;margin-left:.3rem;
+  border:1px solid var(--border);
+}
+.ctx-tab.active .badge{background:var(--accent-light);color:var(--accent);border-color:var(--accent);}
+.ctx-sep{width:1px;height:20px;background:var(--border);flex-shrink:0;margin:0 .1rem;}
+.ctx-add{
+  margin-left:auto;margin-right:.75rem;flex-shrink:0;
+  font-family:'JetBrains Mono',monospace;font-size:.58rem;
+  letter-spacing:.06em;text-transform:uppercase;
+  background:var(--accent);color:#fff;
+  border:none;cursor:pointer;
+  padding:.35rem .7rem;border-radius:2px;
+  white-space:nowrap;touch-action:manipulation;
+}
+.ctx-add:hover{opacity:.85;}
+
+/* ══ ENERGY FILTER BAR — chip-стиль з ScannerPlaner ══ */
+.ebar{
+  display:flex;align-items:center;gap:.35rem;
+  padding:.28rem 1rem;border-bottom:1px solid var(--border);
+  flex-shrink:0;overflow-x:auto;scrollbar-width:none;
+}
+.ebar::-webkit-scrollbar{display:none;}
+.ebar-lbl{
+  font-family:'JetBrains Mono',monospace;font-size:.48rem;
+  letter-spacing:.1em;text-transform:uppercase;color:var(--muted);
+  white-space:nowrap;flex-shrink:0;
+  padding-right:.5rem;border-right:1px solid var(--border);
+}
+.echip{
+  font-family:'JetBrains Mono',monospace;font-size:.55rem;
+  letter-spacing:.05em;text-transform:uppercase;
+  border:1px solid var(--border);color:var(--muted);
+  padding:.18rem .55rem;border-radius:2px;
+  cursor:pointer;background:none;
+  transition:all .15s;white-space:nowrap;flex-shrink:0;
+  touch-action:manipulation;
+}
+.echip:hover{border-color:var(--accent);color:var(--accent);}
+.echip.on{background:var(--accent-light);border-color:var(--accent);color:var(--accent);}
+
+/* ══ BOARD ══ */
+.app-body{flex:1;display:flex;overflow:hidden;}
+#board{
+  flex:1;display:flex;
+  padding:1.2rem;gap:1rem;
+  overflow-x:auto;overflow-y:hidden;
+  align-items:flex-start;
+  scrollbar-width:thin;scrollbar-color:var(--border) transparent;
+}
+@media(max-width:700px){
+  #board{flex-direction:column;overflow-x:hidden;overflow-y:auto;padding:.8rem;gap:.7rem;}
+}
+
+/* ══ COLUMN ══ */
+.col{
+  width:280px;min-width:280px;
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:3px;
+  display:flex;flex-direction:column;
+  flex-shrink:0;
+  max-height:100%;
+  transition:border-color .15s,background .15s;
+}
+.col.dov{border-color:var(--accent);background:var(--accent-light);}
+@media(max-width:700px){.col{width:100%;min-width:0;max-height:none;}}
+
+.col-head{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:.65rem .9rem;border-bottom:1px solid var(--border);flex-shrink:0;
+}
+.col-title{
+  font-family:'JetBrains Mono',monospace;font-size:.58rem;
+  letter-spacing:.1em;text-transform:uppercase;color:var(--muted);
+  display:flex;align-items:center;gap:.45rem;
+}
+.col-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+.col-count{
+  font-family:'JetBrains Mono',monospace;font-size:.52rem;color:var(--muted);
+}
+.col-body{flex:1;overflow-y:auto;padding:.5rem .5rem .3rem;}
+
+/* Швидкий ввід */
+.col-footer{padding:.4rem .5rem;border-top:1px solid var(--border);flex-shrink:0;}
+.quick-inp{
+  width:100%;padding:.45rem .6rem;
+  background:var(--bg);color:var(--text);
+  border:1px solid var(--border);border-radius:2px;
+  font-family:'Literata',Georgia,serif;font-size:.8rem;font-weight:300;
+  transition:border-color .15s;
+}
+.quick-inp:focus{border-color:var(--accent);outline:none;}
+.quick-inp::placeholder{color:var(--muted);}
+
+/* Секція завершених */
+.done-row{
+  display:flex;align-items:center;gap:.4rem;
+  padding:.4rem .9rem;border-top:1px solid var(--border);
+  cursor:pointer;flex-shrink:0;user-select:none;
+}
+.done-row-lbl{
+  font-family:'JetBrains Mono',monospace;font-size:.5rem;
+  letter-spacing:.08em;text-transform:uppercase;color:var(--muted);flex:1;
+}
+.done-row-arr{font-size:.55rem;color:var(--muted);transition:transform .2s;}
+.done-row.open .done-row-arr{transform:rotate(90deg);}
+.done-section{display:none;overflow-y:auto;max-height:160px;padding:.4rem .5rem;}
+.done-row.open+.done-section{display:block;}
+
+/* ══ TASK CARD ══ */
+.tcard{
+  background:var(--bg);
+  border:1px solid var(--border);border-radius:3px;
+  padding:.65rem .75rem .65rem .9rem;
+  margin-bottom:.35rem;
+  cursor:pointer;
+  position:relative;
+  transition:border-color .15s,transform .1s;
+  touch-action:none; /* для pointer drag */
+  user-select:none;
+}
+.tcard:hover{border-color:var(--accent-mid);transform:translateY(-1px);}
+
+/* Енергетична смужка */
+.tcard::before{
+  content:'';
+  position:absolute;left:0;top:3px;bottom:3px;
+  width:3px;border-radius:0 2px 2px 0;
+  background:var(--border);
+}
+.tcard[data-e=low]::before{background:var(--e-low);}
+.tcard[data-e=medium]::before{background:var(--e-med);}
+.tcard[data-e=high]::before{background:var(--e-high);}
+
+/* Stale */
+.tcard.stale{opacity:.55;border-style:dashed;}
+
+/* Done картка */
+.tcard.done-card{
+  opacity:.45;
+  background:var(--surface);
+}
+.tcard.done-card .tc-title{text-decoration:line-through;color:var(--muted);}
+.tcard.done-card::before{background:var(--border)!important;}
+
+.tc-row{display:flex;align-items:flex-start;gap:.5rem;margin-bottom:.3rem;}
+
+/* Чекбокс — кліком завершуємо */
+.tc-cb{
+  width:16px;height:16px;min-width:16px;
+  border:1px solid var(--border);border-radius:2px;
+  background:none;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  margin-top:2px;flex-shrink:0;
+  transition:border-color .15s,background .15s;
+  touch-action:manipulation;
+}
+.tc-cb:hover{border-color:var(--accent);}
+.tcard.done-card .tc-cb{
+  background:var(--accent);border-color:var(--accent);
+  color:#fff;font-size:.55rem;
+}
+.tc-title{
+  font-family:'Literata',Georgia,serif;font-size:.88rem;font-weight:300;
+  line-height:1.4;flex:1;word-break:break-word;
+}
+.tc-meta{
+  font-family:'JetBrains Mono',monospace;font-size:.52rem;
+  color:var(--muted);text-transform:uppercase;letter-spacing:.04em;
+  display:flex;align-items:center;gap:.4rem;flex-wrap:wrap;
+}
+.tc-kind-icon{font-size:.65rem;opacity:.7;}
+.tc-stale{font-size:.7rem;}
+/* Швидкий перехід між контекстами */
+.tc-ctx-btns{
+  display:flex;gap:.25rem;margin-top:.4rem;flex-wrap:wrap;
+}
+.tc-ctx-btn{
+  font-family:'JetBrains Mono',monospace;font-size:.45rem;
+  letter-spacing:.04em;text-transform:uppercase;
+  background:none;border:1px solid var(--border);
+  color:var(--muted);cursor:pointer;
+  padding:.1rem .35rem;border-radius:2px;
+  transition:border-color .15s,color .15s;touch-action:manipulation;
+}
+.tc-ctx-btn:hover{border-color:var(--accent);color:var(--accent);}
+
+/* ══ GHOST (drag) ══ */
+.drag-ghost{
+  position:fixed;pointer-events:none;z-index:9999;
+  background:var(--accent);color:#fff;
+  border-radius:3px;padding:5px 10px;
+  font-family:'JetBrains Mono',monospace;font-size:.62rem;
+  opacity:.9;transform:translate(-50%,-60%) scale(1.04);
+  box-shadow:0 6px 20px rgba(0,0,0,.3);
+  max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+
+/* ══ MODAL ══ */
+.modal{
+  position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:8000;
+  display:none;align-items:center;justify-content:center;
+  backdrop-filter:blur(4px);padding:1.5rem;
+}
+.mcard{
+  background:var(--bg);border:1px solid var(--border);border-radius:3px;
+  padding:2rem;width:100%;max-width:420px;
+  box-shadow:0 24px 48px rgba(0,0,0,.3);
+  max-height:92dvh;overflow-y:auto;
+}
+.mttl{font-family:'Literata',serif;font-size:1.1rem;font-weight:300;
+  letter-spacing:-.02em;margin-bottom:1.5rem;}
+.ilbl{
+  font-family:'JetBrains Mono',monospace;font-size:.55rem;
+  letter-spacing:.08em;text-transform:uppercase;color:var(--muted);
+  display:block;margin-bottom:.3rem;
+}
+.inp{
+  width:100%;padding:.55rem .8rem;margin-bottom:.75rem;border-radius:2px;
+  background:var(--surface);color:var(--text);border:1px solid var(--border);
+  font-family:'Literata',Georgia,serif;font-size:.88rem;font-weight:300;
+  transition:border-color .15s;
+}
+.inp:focus{border-color:var(--accent);}
+.inp::placeholder{color:var(--muted);}
+textarea.inp{resize:vertical;min-height:72px;line-height:1.5;}
+select.inp{
+  font-family:'JetBrains Mono',monospace;font-size:.68rem;
+  appearance:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238a8880' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right .7rem center;cursor:pointer;
+}
+/* Сегментні кнопки в модалці — ідентичні kind-btn з ScannerPlaner */
+.seg{display:flex;gap:.4rem;margin-bottom:.75rem;}
+.seg-btn{
+  flex:1;padding:.45rem .3rem;border-radius:2px;
+  border:1px solid var(--border);background:none;color:var(--muted);
+  font-family:'JetBrains Mono',monospace;font-size:.52rem;
+  letter-spacing:.04em;text-transform:uppercase;cursor:pointer;
+  transition:all .15s;display:flex;flex-direction:column;align-items:center;gap:3px;
+  touch-action:manipulation;
+}
+.seg-btn .si{font-size:.9rem;line-height:1;}
+.seg-btn:hover{border-color:var(--accent);color:var(--accent);}
+.seg-btn.on{background:var(--accent-light);border-color:var(--accent);color:var(--accent);}
+/* Енергія — власні кольори */
+.seg-btn[data-e=low].on{background:#edf5ee;border-color:var(--e-low);color:var(--e-low);}
+.seg-btn[data-e=medium].on{background:#fdf3e7;border-color:var(--e-med);color:var(--e-med);}
+.seg-btn[data-e=high].on{background:#fde8e6;border-color:var(--e-high);color:var(--e-high);}
+[data-theme=dark] .seg-btn[data-e=low].on{background:#1a2e1c;border-color:var(--e-low);color:var(--e-low);}
+[data-theme=dark] .seg-btn[data-e=medium].on{background:#2e2010;border-color:var(--e-med);color:var(--e-med);}
+[data-theme=dark] .seg-btn[data-e=high].on{background:#2e1010;border-color:var(--e-high);color:var(--e-high);}
+
+/* Toggle "завершено" в модалці */
+.done-toggle-wrap{
+  display:flex;align-items:center;gap:.6rem;
+  padding:.55rem 0;margin-bottom:.75rem;cursor:pointer;
+}
+.done-toggle-wrap input{display:none;}
+.dttrack{
+  width:30px;height:16px;background:var(--border);border-radius:8px;
+  position:relative;transition:background .2s;flex-shrink:0;
+}
+.dttrack::after{
+  content:'';position:absolute;top:2px;left:2px;
+  width:12px;height:12px;border-radius:50%;background:#fff;transition:transform .2s;
+}
+.done-toggle-wrap input:checked+.dttrack{background:var(--accent);}
+.done-toggle-wrap input:checked+.dttrack::after{transform:translateX(14px);}
+.dtlbl{font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);}
+
+.pbtn{
+  width:100%;padding:.55rem 1rem;border-radius:2px;background:var(--accent);
+  color:#fff;font-family:'JetBrains Mono',monospace;font-size:.6rem;
+  font-weight:500;letter-spacing:.08em;text-transform:uppercase;
+  cursor:pointer;border:none;transition:opacity .15s;touch-action:manipulation;
+}
+.pbtn:hover{opacity:.85;}
+.delbtn{
+  font-family:'JetBrains Mono',monospace;font-size:.55rem;
+  letter-spacing:.06em;text-transform:uppercase;color:var(--error);
+  background:none;cursor:pointer;padding:0;
+  margin-top:.7rem;width:100%;text-align:center;touch-action:manipulation;
+}
+.aerr{color:var(--error);font-family:'JetBrains Mono',monospace;
+  font-size:.62rem;margin-top:.7rem;text-align:center;}
+.ldg{font-family:'JetBrains Mono',monospace;font-size:.62rem;
+  color:var(--muted);text-align:center;padding:3rem;letter-spacing:.06em;}
+.empty{
+  display:flex;flex-direction:column;align-items:center;
+  padding:2rem 1rem;gap:.5rem;
+}
+.empty-lbl{font-family:'JetBrains Mono',monospace;font-size:.55rem;
+  letter-spacing:.08em;text-transform:uppercase;color:var(--muted);}
 </style>
 </head>
 <body>
 
 <div id="auth-gate">
-  <div class="mcard">
-    <div class="logo" style="text-align:center; margin-bottom:2rem">Scanner<span>Planner</span></div>
-    <input type="email" id="email" class="inp" placeholder="Email">
-    <input type="password" id="pass" class="inp" placeholder="Password">
+  <div class="auth-card">
+    <div class="auth-logo">Scanner<span>Tasks</span></div>
+    <label class="ilbl">Електронна пошта</label>
+    <input type="email" id="email" class="inp" placeholder="email@example.com" style="margin-bottom:.8rem">
+    <label class="ilbl">Пароль</label>
+    <input type="password" id="pass" class="inp" placeholder="••••••••" style="margin-bottom:1.2rem">
     <button class="pbtn" onclick="doLogin()">Увійти</button>
+    <p id="auth-err" class="aerr"></p>
   </div>
 </div>
 
+<!-- TOPBAR -->
 <header class="topbar">
-  <div class="logo" onclick="location.reload()">Scanner<span>Planner</span></div>
-  <div style="display:flex; gap:0.5rem">
-    <button class="ctrl-btn" onclick="runRoulette()">🎲 Що зараз?</button>
-    <button class="ctrl-btn" id="focus-btn" onclick="toggleFocus()">🎯 Фокус</button>
-    <button class="ctrl-btn" onclick="toggleTheme()">☾</button>
-  </div>
+  <button class="site-title" onclick="location.reload()">
+    <svg width="28" height="28" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+      <line x1="16" y1="15" x2="6"  y2="6"  stroke="var(--accent)" stroke-width="0.9" opacity="0.35"/>
+      <line x1="16" y1="15" x2="26" y2="6"  stroke="var(--accent)" stroke-width="0.9" opacity="0.35"/>
+      <line x1="16" y1="15" x2="27" y2="18" stroke="var(--accent)" stroke-width="0.9" opacity="0.35"/>
+      <line x1="16" y1="15" x2="22" y2="27" stroke="var(--accent)" stroke-width="0.9" opacity="0.35"/>
+      <line x1="16" y1="15" x2="9"  y2="26" stroke="var(--accent)" stroke-width="0.9" opacity="0.35"/>
+      <line x1="16" y1="15" x2="5"  y2="18" stroke="var(--accent)" stroke-width="0.9" opacity="0.35"/>
+      <line x1="6"  y1="6"  x2="26" y2="6"  stroke="var(--accent)" stroke-width="0.6" opacity="0.15"/>
+      <line x1="27" y1="18" x2="22" y2="27" stroke="var(--accent)" stroke-width="0.6" opacity="0.15"/>
+      <line x1="9"  y1="26" x2="5"  y2="18" stroke="var(--accent)" stroke-width="0.6" opacity="0.15"/>
+      <circle cx="6"  cy="6"  r="1.8" fill="var(--accent)" opacity="0.4"/>
+      <circle cx="26" cy="6"  r="2.4" fill="var(--accent)" opacity="0.55"/>
+      <circle cx="27" cy="18" r="1.6" fill="var(--accent)" opacity="0.4"/>
+      <circle cx="22" cy="27" r="2"   fill="var(--accent)" opacity="0.45"/>
+      <circle cx="9"  cy="26" r="1.5" fill="var(--accent)" opacity="0.38"/>
+      <circle cx="5"  cy="18" r="1.8" fill="var(--accent)" opacity="0.42"/>
+      <circle cx="16" cy="15" r="5"   stroke="var(--accent)" stroke-width="0.8" fill="none" opacity="0.25"/>
+      <circle cx="16" cy="15" r="4"   fill="var(--accent)"/>
+      <circle cx="16" cy="15" r="2.2" fill="var(--bg)"/>
+      <circle cx="16" cy="15" r="1.2" fill="var(--accent)"/>
+    </svg>
+    Scanner<span>Tasks</span>
+  </button>
+  <button class="hbtn" onclick="runRoulette()" title="Випадкова задача з Колись">🎲 Що зараз?</button>
+  <button class="hbtn" id="focus-btn" onclick="toggleFocus()">🎯 Фокус</button>
+  <button class="theme-btn" id="theme-btn" onclick="toggleTheme()">☾ тема</button>
+  <button class="ibtn" id="btn-add" title="Нова задача">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+  </button>
 </header>
 
+<!-- CONTEXT TABS (drag targets) -->
 <nav class="ctx-bar" id="ctx-bar">
-  <button class="ctx-tab active" data-ctx="inbox" ondragover="tOver(event)" ondragleave="tLeave(event)" ondrop="tDrop(event, 'inbox')">Вхідні <span class="badge" id="b-inbox">0</span></button>
-  <button class="ctx-tab" data-ctx="today" ondragover="tOver(event)" ondragleave="tLeave(event)" ondrop="tDrop(event, 'today')">Сьогодні <span class="badge" id="b-today">0</span></button>
-  <button class="ctx-tab" data-ctx="waiting" ondragover="tOver(event)" ondragleave="tLeave(event)" ondrop="tDrop(event, 'waiting')">Чекаю/делеговано <span class="badge" id="b-waiting">0</span></button>
-  <button class="ctx-tab" data-ctx="someday" ondragover="tOver(event)" ondragleave="tLeave(event)" ondrop="tDrop(event, 'someday')">Колись <span class="badge" id="b-someday">0</span></button>
+  <button class="ctx-tab active" data-ctx="inbox">Вхідні<span class="badge" id="b-inbox">0</span></button>
+  <button class="ctx-tab" data-ctx="today">Сьогодні<span class="badge" id="b-today">0</span></button>
+  <button class="ctx-tab" data-ctx="waiting">Чекаю<span class="badge" id="b-waiting">0</span></button>
+  <button class="ctx-tab" data-ctx="someday">Колись<span class="badge" id="b-someday">0</span></button>
+  <button class="ctx-add" onclick="openMod(null)">+ Задача</button>
 </nav>
 
-<div class="filter-bar">
-  <span style="font-family:'JetBrains Mono'; font-size:0.55rem; color:var(--muted)">ЕНЕРГО-ФІЛЬТР:</span>
-  <button class="ctrl-btn active" id="f-all" onclick="setFilter(null)">Всі</button>
-  <button class="ctrl-btn" id="f-low" onclick="setFilter('low')" style="color:var(--e-low)">Low</button>
-  <button class="ctrl-btn" id="f-med" onclick="setFilter('medium')" style="color:var(--e-med)">Med</button>
-  <button class="ctrl-btn" id="f-high" onclick="setFilter('high')" style="color:var(--e-high)">High</button>
+<!-- ENERGY FILTER -->
+<div class="ebar">
+  <span class="ebar-lbl">Енергія</span>
+  <button class="echip on" data-e="all" onclick="setFilter(this,'all')">Всі</button>
+  <button class="echip" data-e="low"  onclick="setFilter(this,'low')">🌿 Низька</button>
+  <button class="echip" data-e="medium" onclick="setFilter(this,'medium')">⚡ Середня</button>
+  <button class="echip" data-e="high" onclick="setFilter(this,'high')">🔥 Висока</button>
 </div>
 
-<main class="app-body"><div id="board"></div></main>
+<div class="app-body">
+  <div id="board"><p class="ldg">Завантаження...</p></div>
+</div>
 
 <div id="modal" class="modal" onclick="if(event.target===this)closeMod()">
   <div class="mcard" id="mbody"></div>
 </div>
 
 <script>
-const SB_URL = "https://mlkdphygsdfcanztbtez.supabase.co"; 
-const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1sa2RwaHlnc2RmY2FuenRidGV6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYyODAwNTAsImV4cCI6MjA5MTg1NjA1MH0.PfjkZXua-9tp2lxVsBD3YBUNpx_USmMha5BQBZcGLFc";
-const sb = supabase.createClient(SB_URL, SB_KEY);
+/*
+  SQL для Supabase (виконати один раз):
+  CREATE TABLE IF NOT EXISTS scanner_tasks (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id uuid REFERENCES auth.users(id),
+    title text NOT NULL,
+    note text,
+    context text DEFAULT 'inbox',
+    energy text DEFAULT 'medium',
+    kind text DEFAULT 'task',
+    done boolean DEFAULT false,
+    done_at timestamptz,
+    created_at timestamptz DEFAULT now()
+  );
+  ALTER TABLE scanner_tasks ENABLE ROW LEVEL SECURITY;
+  CREATE POLICY "own" ON scanner_tasks FOR ALL USING (auth.uid()=user_id);
+*/
 
-let tasks = [];
-let activeCtx = 'inbox';
-let energyFilter = null;
-let focusMode = false;
-let editId = null;
+const SB_URL="https://mlkdphygsdfcanztbtez.supabase.co";
+const SB_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1sa2RwaHlnc2RmY2FuenRidGV6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYyODAwNTAsImV4cCI6MjA5MTg1NjA1MH0.PfjkZXua-9tp2lxVsBD3YBUNpx_USmMha5BQBZcGLFc";
+const sb=supabase.createClient(SB_URL,SB_KEY);
+
+let tasks=[];
+let activeCtx='inbox';
+let energyFilter='all';
+let focusMode=false;
+let editId=null;
+
+const CTXS={
+  inbox:  {lbl:'Вхідні',   dot:'var(--muted)'},
+  today:  {lbl:'Сьогодні', dot:'var(--accent)'},
+  waiting:{lbl:'Чекаю',    dot:'var(--e-med)'},
+  someday:{lbl:'Колись',   dot:'var(--muted)'},
+};
+const KINDS=[
+  {id:'task',    icon:'☐', lbl:'Задача'},
+  {id:'project', icon:'🎯',lbl:'Проєкт'},
+  {id:'interest',icon:'✦', lbl:'Інтерес'},
+  {id:'zone',    icon:'◎', lbl:'Зона'},
+];
+const ENERGIES=[
+  {id:'low',   icon:'🌿',lbl:'Низька'},
+  {id:'medium',icon:'⚡',lbl:'Середня'},
+  {id:'high',  icon:'🔥',lbl:'Висока'},
+];
+const kIcon=k=>KINDS.find(x=>x.id===k)?.icon||'☐';
+
+/* ── THEME ── */
+function initTheme(){
+  const t=localStorage.getItem('st-theme')||(matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light');
+  document.documentElement.dataset.theme=t;
+  document.getElementById('theme-btn').textContent=t==='dark'?'☀ тема':'☾ тема';
+}
+function toggleTheme(){
+  const n=document.documentElement.dataset.theme==='dark'?'light':'dark';
+  document.documentElement.dataset.theme=n;
+  localStorage.setItem('st-theme',n);
+  document.getElementById('theme-btn').textContent=n==='dark'?'☀ тема':'☾ тема';
+}
 
 /* ── AUTH ── */
-async function doLogin() {
-  const { error } = await sb.auth.signInWithPassword({ email: email.value, password: pass.value });
-  if (error) alert(error.message);
+async function doLogin(){
+  const{error}=await sb.auth.signInWithPassword({email:email.value,password:pass.value});
+  if(error)document.getElementById('auth-err').textContent='Помилка: '+error.message;
 }
-sb.auth.onAuthStateChange((ev, sess) => {
-  document.getElementById('auth-gate').style.display = sess ? 'none' : 'flex';
-  if (sess) sync();
+sb.auth.onAuthStateChange((ev,sess)=>{
+  document.getElementById('auth-gate').style.display=sess?'none':'flex';
+  if(sess)sync();
+  initTheme();
 });
 
 /* ── DATA ── */
-async function sync() {
-  const { data } = await sb.from('scanner_tasks').select('*').order('created_at', { ascending: false });
-  tasks = data || [];
+async function sync(){
+  const{data}=await sb.from('scanner_tasks').select('*').order('created_at',{ascending:false});
+  tasks=data||[];
   updateBadges();
   render();
 }
-function updateBadges() {
-  ['inbox', 'today', 'waiting', 'someday'].forEach(k => {
-    const c = tasks.filter(t => t.context === k && !t.done).length;
-    document.getElementById('b-' + k).textContent = c;
+function updateBadges(){
+  Object.keys(CTXS).forEach(k=>{
+    const c=tasks.filter(t=>t.context===k&&!t.done).length;
+    const el=document.getElementById('b-'+k);
+    if(el)el.textContent=c;
   });
 }
 
-/* ── DRAG TO TABS ── */
-function tOver(e) { e.preventDefault(); e.currentTarget.classList.add('drag-over'); }
-function tLeave(e) { e.currentTarget.classList.remove('drag-over'); }
-async function tDrop(e, ctx) {
-  e.preventDefault(); e.currentTarget.classList.remove('drag-over');
-  const id = e.dataTransfer.getData('text');
-  await sb.from('scanner_tasks').update({ context: ctx }).eq('id', id);
-  sync();
+/* ── FILTER ── */
+function setFilter(btn,val){
+  energyFilter=val;
+  document.querySelectorAll('.echip').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  render();
 }
 
-/* ── SCANNER UTILS ── */
-function setFilter(val) {
-  energyFilter = val;
-  document.querySelectorAll('.filter-bar .ctrl-btn').forEach(b => b.classList.remove('active'));
-  document.getElementById(val ? 'f-'+val.substring(0,3) : 'f-all').classList.add('active');
+/* ── FOCUS ── */
+function toggleFocus(){
+  focusMode=!focusMode;
+  document.getElementById('focus-btn').classList.toggle('on',focusMode);
   render();
 }
-function toggleFocus() {
-  focusMode = !focusMode;
-  document.getElementById('focus-btn').classList.toggle('active', focusMode);
+
+/* ── ROULETTE ── */
+function runRoulette(){
+  const pool=tasks.filter(t=>t.context==='someday'&&!t.done&&t.energy!=='high');
+  if(!pool.length){alert("Немає ідей у 'Колись' для рулетки");return;}
+  openMod(pool[Math.floor(Math.random()*pool.length)]);
+}
+
+/* ── CTX TABS — click ── */
+document.getElementById('ctx-bar').addEventListener('click',e=>{
+  const tab=e.target.closest('.ctx-tab');
+  if(!tab)return;
+  document.querySelectorAll('.ctx-tab').forEach(t=>t.classList.remove('active'));
+  tab.classList.add('active');
+  activeCtx=tab.dataset.ctx;
   render();
+});
+
+/* ── ADD BUTTON ── */
+document.getElementById('btn-add').addEventListener('click',()=>openMod(null));
+
+/* ══════════════════════════════════════════════════
+   DRAG & DROP
+   Desktop: HTML5 drag API.
+   Mobile: Pointer Events з setPointerCapture().
+   
+   Таби контексту — drop targets для desktop і touch.
+   Колонки — drop targets для desktop і touch.
+══════════════════════════════════════════════════ */
+let D={on:false,drag:false,id:null,ghost:null,tgt:null,x0:0,y0:0,lbl:''};
+
+function mkDrag(el,taskId,label){
+  /* Desktop */
+  el.draggable=true;
+  el.ondragstart=e=>{
+    e.dataTransfer.setData('text',taskId);
+    e.dataTransfer.setData('tid',taskId);
+  };
+
+  /* Mobile / touch — pointer events */
+  el.addEventListener('pointerdown',e=>{
+    if(e.pointerType==='mouse'||!e.isPrimary)return;
+    try{el.setPointerCapture(e.pointerId);}catch(_){}
+    if(D.ghost)D.ghost.remove();
+    if(D.tgt){D.tgt.classList.remove('dov');D.tgt=null;}
+    D={on:true,drag:false,id:taskId,ghost:null,tgt:null,x0:e.clientX,y0:e.clientY,lbl:label};
+  });
+
+  el.addEventListener('pointermove',e=>{
+    if(!D.on||e.pointerType==='mouse'||!e.isPrimary)return;
+    const dx=e.clientX-D.x0,dy=e.clientY-D.y0;
+    if(Math.sqrt(dx*dx+dy*dy)<8)return;
+    e.preventDefault();
+    if(!D.drag){
+      D.drag=true;
+      const g=document.createElement('div');
+      g.className='drag-ghost';g.textContent=D.lbl;
+      g.style.left=e.clientX+'px';g.style.top=e.clientY+'px';
+      document.body.appendChild(g);D.ghost=g;
+      if(navigator.vibrate)navigator.vibrate(18);
+    }
+    D.ghost.style.left=e.clientX+'px';
+    D.ghost.style.top=e.clientY+'px';
+
+    /* Ціль під пальцем */
+    D.ghost.style.visibility='hidden';
+    const un=document.elementFromPoint(e.clientX,e.clientY);
+    D.ghost.style.visibility='visible';
+
+    const nc=un?.closest('.col[data-energy]');
+    const nt2=un?.closest('.ctx-tab[data-ctx]');
+    const newTgt=nc||nt2||null;
+    if(D.tgt!==newTgt){
+      D.tgt?.classList.remove('dov');
+      newTgt?.classList.add('dov');
+      D.tgt=newTgt;
+    }
+  },{passive:false});
+
+  el.addEventListener('pointerup',async e=>{
+    if(!D.on||e.pointerType==='mouse'||!e.isPrimary)return;
+    try{el.releasePointerCapture(e.pointerId);}catch(_){}
+    D.ghost?.remove();
+    D.tgt?.classList.remove('dov');
+    if(D.drag&&D.id&&D.tgt){
+      const tgt=D.tgt;
+      if(tgt.classList.contains('col')&&tgt.dataset.energy!==undefined){
+        /* Перетягнуто у колонку — змінюємо енергію */
+        const energy=tgt.dataset.energy||null;
+        await sb.from('scanner_tasks').update({context:activeCtx,energy}).eq('id',D.id);
+        sync();
+      } else if(tgt.classList.contains('ctx-tab')&&tgt.dataset.ctx){
+        /* Перетягнуто у таб — змінюємо контекст */
+        await sb.from('scanner_tasks').update({context:tgt.dataset.ctx}).eq('id',D.id);
+        sync();
+      }
+    }
+    D={on:false,drag:false,id:null,ghost:null,tgt:null,x0:0,y0:0,lbl:''};
+  });
+
+  el.addEventListener('pointercancel',()=>{
+    D.ghost?.remove();
+    D.tgt?.classList.remove('dov');
+    D={on:false,drag:false,id:null,ghost:null,tgt:null,x0:0,y0:0,lbl:''};
+  });
 }
-function runRoulette() {
-  const options = tasks.filter(t => t.context === 'someday' && !t.done && t.energy !== 'high');
-  if (!options.length) return alert("Немає ідей у 'Колись' для рулетки");
-  openMod(options[Math.floor(Math.random() * options.length)]);
-}
+
+/* Desktop drop на таби */
+document.querySelectorAll('.ctx-tab').forEach(tab=>{
+  tab.addEventListener('dragover',e=>{e.preventDefault();tab.classList.add('dov');});
+  tab.addEventListener('dragleave',()=>tab.classList.remove('dov'));
+  tab.addEventListener('drop',async e=>{
+    e.preventDefault();tab.classList.remove('dov');
+    const id=e.dataTransfer.getData('text')||e.dataTransfer.getData('tid');
+    if(id){await sb.from('scanner_tasks').update({context:tab.dataset.ctx}).eq('id',id);sync();}
+  });
+});
 
 /* ── RENDER ── */
-function render() {
-  const board = document.getElementById('board');
-  board.innerHTML = '';
-  
-  let visible = tasks.filter(t => !t.done);
-  if (energyFilter) visible = visible.filter(t => t.energy === energyFilter);
-  if (focusMode && activeCtx === 'today') visible = visible.filter(t => t.kind === 'task');
+function render(){
+  const board=document.getElementById('board');
+  board.innerHTML='';
 
-  if (activeCtx === 'inbox') {
-    const list = visible.filter(t => t.context === 'inbox');
-    board.appendChild(buildCol("Вхідні (Чисті)", list, null, 'var(--muted)'));
+  let visible=tasks.filter(t=>!t.done);
+  if(energyFilter&&energyFilter!=='all')visible=visible.filter(t=>(t.energy||'medium')===energyFilter);
+  if(focusMode&&activeCtx==='today')visible=visible.filter(t=>t.kind==='task');
+
+  /* Inbox — одна колонка, без поділу по енергії */
+  if(activeCtx==='inbox'){
+    const list=visible.filter(t=>t.context==='inbox');
+    const doneList=tasks.filter(t=>t.done&&t.context==='inbox');
+    board.appendChild(buildCol('Вхідні','var(--muted)',null,list,doneList));
   } else {
-    const enCfg = [
-      {id:'low', lbl:'Низька', color:'var(--e-low)'},
-      {id:'medium', lbl:'Середня', color:'var(--e-med)'},
-      {id:'high', lbl:'Висока', color:'var(--e-high)'}
-    ];
-    enCfg.forEach(en => {
-      if (!energyFilter || energyFilter === en.id) {
-        const list = visible.filter(t => t.context === activeCtx && t.energy === en.id);
-        board.appendChild(buildCol(en.lbl, list, en.id, en.color));
-      }
+    /* Інші контексти — три колонки по енергії */
+    ENERGIES.forEach(en=>{
+      if(energyFilter!=='all'&&energyFilter!==en.id)return;
+      const list=visible.filter(t=>t.context===activeCtx&&(t.energy||'medium')===en.id);
+      const doneList=tasks.filter(t=>t.done&&t.context===activeCtx&&(t.energy||'medium')===en.id);
+      board.appendChild(buildCol(en.icon+' '+en.lbl,
+        en.id==='low'?'var(--e-low)':en.id==='medium'?'var(--e-med)':'var(--e-high)',
+        en.id,list,doneList));
     });
   }
 }
 
-function buildCol(title, list, energy, color) {
-  const col = document.createElement('div');
-  col.className = 'col';
-  col.ondragover = e => e.preventDefault();
-  col.ondrop = async e => {
-    const id = e.dataTransfer.getData('text');
-    await sb.from('scanner_tasks').update({ context: activeCtx, energy: energy }).eq('id', id);
-    sync();
-  };
+function buildCol(title,color,energy,list,doneList){
+  const col=document.createElement('div');
+  col.className='col';
+  if(energy!==null)col.dataset.energy=energy||'';
 
-  col.innerHTML = `
-    <div class="col-head">
-      <div class="col-title"><span class="col-dot" style="background:${color}"></span>${title}</div>
-      <div class="badge">${list.length}</div>
+  /* Desktop drag — drop на колонку */
+  col.addEventListener('dragover',e=>e.preventDefault());
+  col.addEventListener('drop',async e=>{
+    const id=e.dataTransfer.getData('text')||e.dataTransfer.getData('tid');
+    if(!id)return;
+    const upd={context:activeCtx};
+    if(energy!==null)upd.energy=energy;
+    await sb.from('scanner_tasks').update(upd).eq('id',id);
+    sync();
+  });
+
+  /* Заголовок */
+  const head=document.createElement('div');head.className='col-head';
+  head.innerHTML=`
+    <div class="col-title">
+      <span class="col-dot" style="background:${color}"></span>${title}
     </div>
-    <div class="col-body"></div>
-    <div class="col-footer">
-      <input class="quick-in" placeholder="+ Швидко..." onkeydown="handleQuickAdd(event, '${energy||''}')">
-    </div>
-  `;
-  const body = col.querySelector('.col-body');
-  list.forEach(t => body.appendChild(mkCard(t)));
+    <span class="col-count">${list.length}</span>`;
+  col.appendChild(head);
+
+  /* Тіло */
+  const body=document.createElement('div');body.className='col-body';
+  if(list.length===0){
+    body.innerHTML=`<div class="empty"><span style="font-size:1.4rem;opacity:.25">✓</span><span class="empty-lbl">Порожньо</span></div>`;
+  } else {
+    list.forEach(t=>body.appendChild(mkCard(t,false)));
+  }
+  col.appendChild(body);
+
+  /* Швидкий ввід */
+  const footer=document.createElement('div');footer.className='col-footer';
+  const qi=document.createElement('input');
+  qi.className='quick-inp';qi.placeholder='+ Швидко...';
+  qi.addEventListener('keydown',async ev=>{
+    if(ev.key!=='Enter'||!qi.value.trim())return;
+    const user=(await sb.auth.getUser()).data.user;
+    await sb.from('scanner_tasks').insert([{
+      title:qi.value.trim(),context:activeCtx,
+      energy:energy||'medium',user_id:user.id
+    }]);
+    qi.value='';sync();
+  });
+  footer.appendChild(qi);col.appendChild(footer);
+
+  /* Завершені */
+  if(doneList.length>0){
+    const dr=document.createElement('div');dr.className='done-row';
+    dr.innerHTML=`<span class="done-row-lbl">Завершені (${doneList.length})</span><span class="done-row-arr">▶</span>`;
+    dr.onclick=()=>dr.classList.toggle('open');
+    const ds=document.createElement('div');ds.className='done-section';
+    doneList.forEach(t=>ds.appendChild(mkCard(t,true)));
+    col.appendChild(dr);col.appendChild(ds);
+  }
   return col;
 }
 
-function mkCard(t) {
-  const el = document.createElement('div');
-  const age = (Date.now() - new Date(t.created_at)) / 86400000;
-  const isStale = t.context === 'inbox' && age > 3;
-  const isOld = t.context === 'inbox' && age > 7;
+function mkCard(t,isDoneSection){
+  const age=(Date.now()-new Date(t.created_at))/86400000;
+  const isStale=t.context==='inbox'&&age>3&&!t.done;
 
-  el.className = `tcard ${isOld ? 'is-stale' : ''}`;
-  if (t.energy) el.dataset.e = t.energy;
-  el.draggable = true;
-  el.ondragstart = e => e.dataTransfer.setData('text', t.id);
-  el.onclick = () => openMod(t);
+  const el=document.createElement('div');
+  el.className='tcard'+(t.done?' done-card':'')+(isStale?' stale':'');
+  if(t.energy&&!t.done)el.dataset.e=t.energy;
 
-  el.innerHTML = `
-    <div class="tc-title">
-      ${t.title} ${isStale ? '<span class="stale-icon">🕸️</span>' : ''}
-    </div>
-    <div class="tc-meta">
-      <span>${t.kind || 'task'}</span>
-      <span style="float:right; cursor:pointer" onclick="event.stopPropagation(); toggleDone('${t.id}')">◯</span>
-    </div>
-  `;
+  /* Рядок з чекбоксом і заголовком */
+  const row=document.createElement('div');row.className='tc-row';
+
+  const cb=document.createElement('div');cb.className='tc-cb';
+  if(t.done)cb.textContent='✓';
+  cb.addEventListener('click',e=>{e.stopPropagation();toggleDone(t);});
+
+  const ttl=document.createElement('div');ttl.className='tc-title';
+  ttl.textContent=t.title;
+  if(isStale){const s=document.createElement('span');s.className='tc-stale';s.textContent=' 🕸️';ttl.appendChild(s);}
+
+  row.appendChild(cb);row.appendChild(ttl);
+  el.appendChild(row);
+
+  /* Мета */
+  const meta=document.createElement('div');meta.className='tc-meta';
+  const ki=document.createElement('span');ki.className='tc-kind-icon';ki.textContent=kIcon(t.kind);
+  const kl=document.createElement('span');kl.textContent=(KINDS.find(k=>k.id===t.kind)?.lbl)||'Задача';
+  meta.appendChild(ki);meta.appendChild(kl);
+  if(t.note){const nl=document.createElement('span');nl.textContent='· '+t.note.slice(0,30)+(t.note.length>30?'…':'');meta.appendChild(nl);}
+  el.appendChild(meta);
+
+  /* Кнопки переходу між контекстами */
+  if(!t.done){
+    const ctxBtns=document.createElement('div');ctxBtns.className='tc-ctx-btns';
+    Object.entries(CTXS).filter(([k])=>k!==t.context).forEach(([k,v])=>{
+      const b=document.createElement('button');b.className='tc-ctx-btn';
+      b.textContent='→ '+v.lbl;
+      b.addEventListener('click',ev=>{ev.stopPropagation();moveCtx(t,k);});
+      ctxBtns.appendChild(b);
+    });
+    el.appendChild(ctxBtns);
+  }
+
+  /* Клік — відкрити модалку */
+  el.addEventListener('click',()=>openMod(t));
+
+  /* Drag */
+  if(!t.done)mkDrag(el,t.id,t.title);
+
   return el;
 }
 
 /* ── ACTIONS ── */
-async function handleQuickAdd(e, en) {
-  if (e.key !== 'Enter' || !e.target.value.trim()) return;
-  const user = (await sb.auth.getUser()).data.user;
-  await sb.from('scanner_tasks').insert([{
-    title: e.target.value.trim(),
-    context: activeCtx,
-    energy: en === '' ? null : en,
-    user_id: user.id
-  }]);
-  e.target.value = '';
+async function toggleDone(t){
+  const done=!t.done;
+  await sb.from('scanner_tasks')
+    .update({done,done_at:done?new Date().toISOString():null})
+    .eq('id',t.id);
+  sync();
+}
+async function moveCtx(t,ctx){
+  await sb.from('scanner_tasks').update({context:ctx}).eq('id',t.id);
   sync();
 }
 
-async function toggleDone(id) {
-  await sb.from('scanner_tasks').update({ done: true, done_at: new Date() }).eq('id', id);
-  sync();
-}
+/* ── MODAL ── */
+function openMod(t=null){
+  editId=t?.id??null;
+  const body=document.getElementById('mbody');
+  document.getElementById('modal').style.display='flex';
 
-function openMod(t) {
-  editId = t.id;
-  document.getElementById('modal').style.display = 'flex';
-  document.getElementById('mbody').innerHTML = `
-    <input id="m-ttl" class="inp" value="${t.title}">
-    <textarea id="m-note" class="inp" style="height:80px" placeholder="Нотатки...">${t.note||''}</textarea>
-    <div style="display:flex; gap:10px; margin-bottom:1rem">
-      <select id="m-ctx" class="inp">${['inbox','today','waiting','someday'].map(k => `<option value="${k}" ${t.context===k?'selected':''}>${k.toUpperCase()}</option>`)}</select>
-      <select id="m-en" class="inp">
-        <option value="">БЕЗ ЕНЕРГІЇ</option>
-        <option value="low" ${t.energy==='low'?'selected':''}>LOW</option>
-        <option value="medium" ${t.energy==='medium'?'selected':''}>MED</option>
-        <option value="high" ${t.energy==='high'?'selected':''}>HIGH</option>
-      </select>
+  const knd=t?.kind||'task';
+  const en=t?.energy||'medium';
+  const ctx=t?.context||activeCtx;
+  const done=t?.done||false;
+
+  body.innerHTML=`
+    <div class="mttl">${t?'Редагувати':'Нова'} задача</div>
+
+    <label class="ilbl">Назва</label>
+    <input id="m-ttl" class="inp" value="${(t?.title||'').replace(/"/g,'&quot;')}" placeholder="Що зробити?">
+
+    <label class="ilbl">Нотатка</label>
+    <textarea id="m-note" class="inp" placeholder="Деталі, посилання...">${t?.note||''}</textarea>
+
+    <label class="ilbl">Тип</label>
+    <div class="seg" id="seg-k">
+      ${KINDS.map(k=>`<button type="button" class="seg-btn${knd===k.id?' on':''}" data-v="${k.id}" onclick="segSel('seg-k','m-kind',this)">
+        <span class="si">${k.icon}</span>${k.lbl}</button>`).join('')}
     </div>
-    <button class="pbtn" onclick="save()">Зберегти</button>
-    <div onclick="delTask('${t.id}')" style="text-align:center; color:var(--e-high); margin-top:1rem; font-size:0.6rem; cursor:pointer">ВИДАЛИТИ</div>
+    <input type="hidden" id="m-kind" value="${knd}">
+
+    <label class="ilbl">Енергія</label>
+    <div class="seg" id="seg-e">
+      ${ENERGIES.map(e=>`<button type="button" class="seg-btn${en===e.id?' on':''}" data-v="${e.id}" data-e="${e.id}" onclick="segSel('seg-e','m-energy',this)">
+        <span class="si">${e.icon}</span>${e.lbl}</button>`).join('')}
+    </div>
+    <input type="hidden" id="m-energy" value="${en}">
+
+    <label class="ilbl">Контекст</label>
+    <select id="m-ctx" class="inp">
+      ${Object.entries(CTXS).map(([k,v])=>`<option value="${k}" ${ctx===k?'selected':''}>${v.lbl}</option>`).join('')}
+    </select>
+
+    ${t?`<label class="done-toggle-wrap">
+      <input type="checkbox" id="m-done" ${done?'checked':''}>
+      <span class="dttrack"></span>
+      <span class="dtlbl">Завершено</span>
+    </label>`:''}
+
+    <button class="pbtn" onclick="saveTask()">Зберегти</button>
+    ${t?`<button class="delbtn" onclick="delTask('${t.id}')">Видалити задачу</button>`:''}
   `;
+  setTimeout(()=>document.getElementById('m-ttl')?.focus(),40);
 }
 
-async function save() {
-  const d = {
-    title: document.getElementById('m-ttl').value,
-    note: document.getElementById('m-note').value,
-    context: document.getElementById('m-ctx').value,
-    energy: document.getElementById('m-en').value || null
+function segSel(segId,hidId,btn){
+  document.getElementById(segId).querySelectorAll('.seg-btn').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  document.getElementById(hidId).value=btn.dataset.v;
+}
+
+function closeMod(){document.getElementById('modal').style.display='none';editId=null;}
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeMod();});
+
+async function saveTask(){
+  const ttlEl=document.getElementById('m-ttl');
+  if(!ttlEl?.value?.trim()){ttlEl?.focus();return;}
+  const user=(await sb.auth.getUser()).data.user;
+  const done=document.getElementById('m-done')?.checked||false;
+  const d={
+    title:ttlEl.value.trim(),
+    note:document.getElementById('m-note')?.value?.trim()||null,
+    kind:document.getElementById('m-kind')?.value||'task',
+    energy:document.getElementById('m-energy')?.value||'medium',
+    context:document.getElementById('m-ctx')?.value||'inbox',
+    done,
+    done_at:done?new Date().toISOString():null,
+    user_id:user.id,
   };
-  await sb.from('scanner_tasks').update(d).eq('id', editId);
-  closeMod(); sync();
+  const{error}=editId
+    ?await sb.from('scanner_tasks').update(d).eq('id',editId)
+    :await sb.from('scanner_tasks').insert([d]);
+  if(error){alert('Помилка: '+error.message);return;}
+  closeMod();sync();
 }
 
-async function delTask(id) {
-  if(confirm('Видалити?')) { await sb.from('scanner_tasks').delete().eq('id', id); closeMod(); sync(); }
+async function delTask(id){
+  if(!confirm('Видалити задачу?'))return;
+  await sb.from('scanner_tasks').delete().eq('id',id);
+  closeMod();sync();
 }
 
-function closeMod() { document.getElementById('modal').style.display = 'none'; }
-
-document.getElementById('ctx-bar').onclick = e => {
-  const tab = e.target.closest('.ctx-tab');
-  if (!tab) return;
-  document.querySelectorAll('.ctx-tab').forEach(t => t.classList.remove('active'));
-  tab.classList.add('active');
-  activeCtx = tab.dataset.ctx;
-  render();
-};
-
-function toggleTheme() {
-  const d = document.documentElement;
-  d.dataset.theme = d.dataset.theme === 'dark' ? 'light' : 'dark';
-}
+initTheme();
 </script>
 </body>
 </html>
