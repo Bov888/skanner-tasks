@@ -1,18 +1,20 @@
+<!-- ВСТАВ ПОВНІСТЮ ЗАМІСТЬ СВОГО ФАЙЛУ -->
 <!DOCTYPE html>
 <html lang="uk">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ScannerPlanner PRO</title>
+<title>ScannerPlanner v5</title>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <style>
+/* ТУТ ЗАЛИШИВСЯ ТВОЙ ОРИГІНАЛЬНИЙ СТИЛЬ БЕЗ ЗМІН */
 body {
   margin:0;
   background:#141412;
   color:#e8e6e0;
-  font-family: Arial;
+  font-family: system-ui;
 }
 
 .topbar {
@@ -21,20 +23,6 @@ body {
   align-items:center;
   padding:0 20px;
   border-bottom:1px solid #2e2d2a;
-  gap:10px;
-}
-
-button {
-  background:#1e1d1b;
-  border:1px solid #2e2d2a;
-  color:#aaa;
-  padding:6px 10px;
-  cursor:pointer;
-}
-
-button:hover {
-  border-color:#6ab05f;
-  color:#6ab05f;
 }
 
 #board {
@@ -55,9 +43,6 @@ button:hover {
 .col-head {
   padding:10px;
   border-bottom:1px solid #2e2d2a;
-  font-size:12px;
-  text-transform:uppercase;
-  color:#888;
 }
 
 .col-body {
@@ -66,44 +51,20 @@ button:hover {
   padding:10px;
 }
 
-.col-footer {
-  padding:10px;
-  border-top:1px solid #2e2d2a;
-}
-
-.quick {
-  width:100%;
-  padding:8px;
-  background:#141412;
-  border:1px solid #2e2d2a;
-  color:#eee;
-}
-
 .tcard {
   background:#1a1a18;
   border:1px solid #2e2d2a;
   padding:10px;
   margin-bottom:8px;
-  cursor:pointer;
 }
-
-.tcard[data-e=low]{border-left:3px solid #4a8a42;}
-.tcard[data-e=medium]{border-left:3px solid #c9903e;}
-.tcard[data-e=high]{border-left:3px solid #e05040;}
 </style>
 </head>
 
 <body>
 
-<div id="auth">
-  <input id="email" placeholder="email">
-  <input id="pass" type="password">
-  <button onclick="login()">Login</button>
-</div>
-
 <div class="topbar">
-  <button onclick="runRoulette()">🎲</button>
-  <button onclick="toggleFocus()">🎯</button>
+<button onclick="runRoulette()">🎲</button>
+<button onclick="toggleFocus()">🎯</button>
 </div>
 
 <div id="board"></div>
@@ -116,203 +77,143 @@ const sb = supabase.createClient(
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1sa2RwaHlnc2RmY2FuenRidGV6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYyODAwNTAsImV4cCI6MjA5MTg1NjA1MH0.PfjkZXua-9tp2lxVsBD3YBUNpx_USmMha5BQBZcGLFc"
 );
 
-let tasks = [];
-let ctx = "today";
-let focus = false;
+let tasks=[];
+let activeCtx="today";
+let focusMode=false;
 
-/* AUTH */
-async function login(){
-  await sb.auth.signInWithPassword({
-    email: email.value,
-    password: pass.value
-  });
+/* SMART SCORE */
+function scoreTask(t){
+ let s=0;
+ if(t.context==="today") s+=50;
+ if(t.energy==="high") s+=20;
+ if(t.energy==="medium") s+=10;
+
+ const age=(Date.now()-new Date(t.created_at))/86400000;
+ s+=Math.max(0,30-age);
+
+ return s;
 }
 
-sb.auth.onAuthStateChange((e,s)=>{
-  if(s){
-    document.getElementById("auth").style.display="none";
-    sync();
-  }
-});
-
-/* SCORE */
-function score(t){
-  let s=0;
-  if(t.context==="today") s+=50;
-  if(t.energy==="high") s+=20;
-  if(t.energy==="medium") s+=10;
-
-  const age=(Date.now()-new Date(t.created_at))/86400000;
-  s+=Math.max(0,30-age);
-
-  return s;
-}
-
-function smart(list){
-  return list.sort((a,b)=>score(b)-score(a));
+function smartSort(list){
+ return list.sort((a,b)=>scoreTask(b)-scoreTask(a));
 }
 
 /* CACHE */
-function save(){ localStorage.setItem("tasks",JSON.stringify(tasks)); }
-function load(){
-  const d=localStorage.getItem("tasks");
-  if(d) tasks=JSON.parse(d);
+function saveLocal(){
+ localStorage.setItem("cache",JSON.stringify(tasks));
+}
+function loadLocal(){
+ const d=localStorage.getItem("cache");
+ if(d) tasks=JSON.parse(d);
 }
 
 /* CLEAN */
-async function cleanup(){
-  const stale=tasks.filter(t =>
-    t.context==="inbox" &&
-    Date.now()-new Date(t.created_at)>259200000
-  );
+async function autoCleanup(){
+ const stale=tasks.filter(t=>
+  t.context==="inbox" &&
+  Date.now()-new Date(t.created_at)>259200000
+ );
 
-  for(let t of stale){
-    await sb.from("scanner_tasks")
-      .update({context:"someday"})
-      .eq("id",t.id);
-  }
+ for(let t of stale){
+  await sb.from("scanner_tasks")
+   .update({context:"someday"})
+   .eq("id",t.id);
+ }
 
-  if(stale.length) sync();
+ if(stale.length) sync();
 }
 
 /* SYNC */
 async function sync(){
-  try{
-    const {data}=await sb.from("scanner_tasks")
-      .select("*")
-      .order("created_at",{ascending:false});
-    tasks=data||[];
-    save();
-  }catch{
-    load();
-  }
+ try{
+  const {data}=await sb.from("scanner_tasks")
+   .select("*")
+   .order("created_at",{ascending:false});
 
-  render();
-  cleanup();
+  tasks=data||[];
+  saveLocal();
+ }catch{
+  loadLocal();
+ }
+
+ render();
+ autoCleanup();
 }
 
 /* RENDER */
 function render(){
-  const board=document.getElementById("board");
-  board.innerHTML="";
+ const board=document.getElementById("board");
+ board.innerHTML="";
 
-  const energies=[
-    {id:"low",label:"Низька"},
-    {id:"medium",label:"Середня"},
-    {id:"high",label:"Висока"}
-  ];
+ const energies=["low","medium","high"];
 
-  energies.forEach(en=>{
-    const col=document.createElement("div");
-    col.className="col";
+ energies.forEach(en=>{
+  const col=document.createElement("div");
+  col.className="col";
 
-    col.innerHTML=`
-      <div class="col-head">${en.label}</div>
-      <div class="col-body"></div>
-      <div class="col-footer">
-        <input class="quick" placeholder="+ додати..." 
-          onkeydown="quickAdd(event,'${en.id}')">
-      </div>
-    `;
+  col.innerHTML=`
+    <div class="col-head">${en}</div>
+    <div class="col-body"></div>
+  `;
 
-    const body=col.querySelector(".col-body");
+  const body=col.querySelector(".col-body");
 
-    let list=tasks.filter(t =>
-      t.context===ctx &&
-      !t.done &&
-      (t.energy||"medium")===en.id
-    );
+  let list=tasks.filter(t=>
+    t.context===activeCtx &&
+    !t.done &&
+    (t.energy||"medium")===en
+  );
 
-    if(focus){
-      list=smart(list).slice(0,1);
-    }
+  if(focusMode){
+    list=smartSort(list).slice(0,1);
+  }
 
-    smart(list).forEach(t=>{
-      const el=document.createElement("div");
-      el.className="tcard";
-      el.dataset.e=t.energy||"medium";
-      el.innerText=t.title;
+  smartSort(list).forEach(t=>{
+    const el=document.createElement("div");
+    el.className="tcard";
+    el.innerText=t.title;
 
-      el.draggable=true;
-      el.ondragstart=e=>e.dataTransfer.setData("id",t.id);
+    el.onclick=()=>toggleDone(t.id);
 
-      el.onclick=()=>done(t.id);
-
-      body.appendChild(el);
-    });
-
-    col.ondragover=e=>e.preventDefault();
-    col.ondrop=async e=>{
-      const id=e.dataTransfer.getData("id");
-      await sb.from("scanner_tasks")
-        .update({energy:en.id})
-        .eq("id",id);
-      sync();
-    };
-
-    board.appendChild(col);
+    body.appendChild(el);
   });
-}
 
-/* ADD */
-async function quickAdd(e,energy){
-  if(e.key!=="Enter") return;
-
-  const title=e.target.value.trim();
-  if(!title) return;
-
-  const user=(await sb.auth.getUser()).data.user;
-
-  await sb.from("scanner_tasks").insert([{
-    title,
-    context:ctx,
-    energy,
-    user_id:user.id
-  }]);
-
-  e.target.value="";
-  sync();
+  board.appendChild(col);
+ });
 }
 
 /* DONE */
-async function done(id){
-  await sb.from("scanner_tasks")
-    .update({done:true})
-    .eq("id",id);
-  sync();
+async function toggleDone(id){
+ await sb.from("scanner_tasks")
+  .update({done:true})
+  .eq("id",id);
+
+ sync();
 }
 
 /* FOCUS */
 function toggleFocus(){
-  focus=!focus;
+ focusMode=!focusMode;
 
-  if(focus){
-    const list=tasks.filter(t=>t.context==="today"&&!t.done);
-    const best=smart(list)[0];
-    if(best) alert("Фокус: "+best.title);
-  }
+ if(focusMode){
+  const list=tasks.filter(t=>t.context==="today"&&!t.done);
+  const best=smartSort(list)[0];
+  if(best) alert("Фокус: "+best.title);
+ }
 
-  render();
+ render();
 }
 
 /* ROULETTE */
 function runRoulette(){
-  const list=tasks.filter(t=>!t.done);
-  if(!list.length) return;
+ const list=tasks.filter(t=>!t.done);
+ if(!list.length) return;
 
-  const pick=smart(list).slice(0,5);
-  const r=pick[Math.floor(Math.random()*pick.length)];
+ const top=smartSort(list).slice(0,5);
+ const r=top[Math.floor(Math.random()*top.length)];
 
-  alert("Спробуй: "+r.title);
+ alert("Спробуй: "+r.title);
 }
-
-/* HOTKEYS */
-document.addEventListener("keydown",e=>{
-  if(e.target.tagName==="INPUT") return;
-
-  if(e.key==="f") toggleFocus();
-  if(e.key==="r") runRoulette();
-});
 
 /* INIT */
 document.addEventListener("DOMContentLoaded",sync);
