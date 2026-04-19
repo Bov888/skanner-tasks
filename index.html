@@ -3,474 +3,465 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>ScannerPlanner</title>
+<title>ScannerTasks v2</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Literata:ital,wght@0,300;0,400;0,500;1,300&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
-  :root {
-    --bg: #f9f9f9;
-    --surface: #ffffff;
-    --surface2: #f0f0f0;
-    --text: #1a1a1a;
-    --muted: #888888;
-    --border: #e0e0e0;
-    --accent: #333333;
-    --accent-mid: #999999;
-    --shadow: 0 2px 8px rgba(0,0,0,0.05);
-    
-    --low: #10b981; 
-    --medium: #f59e0b; 
-    --high: #ef4444;
-  }
+/* ── VARIABLES ── */
+:root{
+  --bg:#fafaf8;--surface:#f4f3ef;--surface2:#eceae4;
+  --border:#e2e1db;--text:#1a1917;--muted:#6b6963;
+  --accent:#2d5a27;--accent-light:#e8f0e6;--accent-mid:#4a8a42;
+  --error:#8b2010;
+  --stale-bg: #f0f0ea;
+  --col-w:300px;
+}
+[data-theme=dark]{
+  --bg:#141412;--surface:#1e1d1b;--surface2:#252422;
+  --border:#2e2d2a;--text:#e8e6e0;--muted:#8a8880;
+  --accent:#6ab05f;--accent-light:#1e2e1c;--accent-mid:#4a8a42;
+  --error:#e05040;
+  --stale-bg: #1a1a18;
+}
 
-  body {
-    margin: 0; padding: 0;
-    background: var(--bg); color: var(--text);
-    font-family: 'Literata', serif;
-    display: flex; flex-direction: column;
-    height: 100vh; overflow: hidden;
-  }
+/* Energy colors */
+:root{--e-low:#6b8f71;--e-med:#b07d3a;--e-high:#8b2010;}
+[data-theme=dark]{--e-low:#4a8a42;--e-med:#c9903e;--e-high:#e05040;}
 
-  header {
-    padding: 1rem 1.5rem; background: var(--surface);
-    border-bottom: 1px solid var(--border);
-    display: flex; justify-content: space-between; align-items: center;
-  }
+*{margin:0;padding:0;box-sizing:border-box;border:none;outline:none;}
+body{
+  background:var(--bg);color:var(--text);
+  font-family:'Literata',Georgia,serif;font-weight:300;
+  height:100vh;height:100dvh;
+  overflow:hidden;display:flex;flex-direction:column;
+  transition:background .3s,color .3s;
+}
 
-  .logo { font-family: 'JetBrains Mono', monospace; font-weight: 500; font-size: 1.2rem; }
+/* ── TOPBAR & CONTROLS ── */
+.topbar{
+  height:52px;display:flex;align-items:center;
+  padding:0 1.5rem;gap:.8rem;
+  border-bottom:1px solid var(--border);
+  background:var(--bg);flex-shrink:0;z-index:100;
+}
+.logo-btn{
+  font-family:'Literata',serif;font-size:1.1rem;font-weight:400;
+  letter-spacing:-.02em;color:var(--text);
+  display:flex;align-items:center;gap:.5rem;
+  flex:1;cursor:pointer;background:none;
+}
+.logo-btn span{color:var(--accent);font-style:italic;}
 
-  nav {
-    display: flex; gap: 1rem; padding: 1rem 1.5rem;
-    overflow-x: auto; background: var(--surface);
-  }
+.btn-group{display:flex;gap:.4rem;align-items:center;}
 
-  .nav-btn {
-    background: none; border: none; padding: 0.5rem 1rem;
-    font-family: 'JetBrains Mono', monospace; font-size: 0.9rem;
-    color: var(--muted); cursor: pointer; border-radius: 4px;
-  }
-  .nav-btn.active { color: var(--text); background: var(--surface2); }
+.ctrl-btn{
+  background:var(--surface);border:1px solid var(--border);
+  color:var(--muted);font-size:.55rem;font-family:'JetBrains Mono',monospace;
+  cursor:pointer;padding:.4rem .7rem;border-radius:2px;
+  letter-spacing:.05em;text-transform:uppercase;
+  transition:all .15s;white-space:nowrap;
+}
+.ctrl-btn:hover{border-color:var(--accent);color:var(--accent);}
+.ctrl-btn.active{background:var(--accent);color:#fff;border-color:var(--accent);}
 
-  main { flex: 1; overflow-y: auto; padding: 1.5rem; }
+/* ── CONTEXT TABS ── */
+.ctx-bar{
+  display:flex;align-items:center;
+  border-bottom:1px solid var(--border);
+  background:var(--bg);flex-shrink:0;
+  overflow-x:auto;scrollbar-width:none;
+}
+.ctx-tab{
+  font-family:'JetBrains Mono',monospace;font-size:.6rem;
+  letter-spacing:.08em;text-transform:uppercase;
+  color:var(--muted);background:none;cursor:pointer;
+  padding:.8rem 1.2rem;border-bottom:2px solid transparent;
+  transition:color .15s,border-color .15s;
+}
+.ctx-tab.active{color:var(--accent);border-bottom-color:var(--accent);}
+.badge{
+  display:inline-flex;margin-left:.4rem;font-size:.5rem;
+  padding:1px 5px;background:var(--surface2);border-radius:10px;
+}
 
-  .board {
-    display: flex; gap: 1.5rem; align-items: flex-start;
-    flex-wrap: wrap; /* Дозволяє колонкам переноситись на новий рядок */
-  }
+/* ── QUICK ADD ── */
+.quick-entry{
+  padding:.6rem 1.5rem;background:var(--surface);
+  border-bottom:1px solid var(--border);display:flex;gap:.8rem;
+}
+.quick-input{
+  flex:1;background:none;font-family:'Literata',serif;
+  font-size:.9rem;color:var(--text);
+}
 
-  .col {
-    background: var(--surface); border-radius: 8px;
-    padding: 1rem; flex: 1; min-width: 280px;
-    box-shadow: var(--shadow);
-    display: flex; flex-direction: column; gap: 1rem;
-  }
+/* ── APP BODY ── */
+.app-body{flex:1;display:flex;flex-direction:column;overflow:hidden;}
+.energy-bar{
+  display:flex;align-items:center;gap:.4rem;
+  padding:.4rem 1.5rem;border-bottom:1px solid var(--border);
+}
+.ebar-lbl{font-family:'JetBrains Mono',monospace;font-size:.5rem;color:var(--muted);text-transform:uppercase;margin-right:.5rem;}
+.echip{
+  font-family:'JetBrains Mono',monospace;font-size:.52rem;
+  border:1px solid var(--border);color:var(--muted);
+  padding:.2rem .6rem;border-radius:2px;cursor:pointer;background:none;
+}
+.echip.on{background:var(--accent-light);border-color:var(--accent);color:var(--accent);}
 
-  .col-head { display: flex; justify-content: space-between; align-items: center; }
-  .col-title { display: flex; align-items: center; gap: 0.5rem; font-weight: 500; font-size: 1.1rem; }
-  .col-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
-  .col-count { font-size: 0.8rem; color: var(--muted); background: var(--surface2); padding: 0.1rem 0.5rem; border-radius: 10px; }
+#board{
+  flex:1;display:flex;overflow-x:auto;padding:1.5rem;gap:1.2rem;
+}
+.col{
+  width:var(--col-w);min-width:var(--col-w);
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:3px;display:flex;flex-direction:column;
+}
+.col-head{padding:.8rem 1rem;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;}
+.col-title{font-family:'JetBrains Mono',monospace;font-size:.6rem;text-transform:uppercase;color:var(--muted);display:flex;align-items:center;gap:.5rem;}
+.col-dot{width:6px;height:6px;border-radius:50%;}
+.col-body{flex:1;overflow-y:auto;padding:.6rem;}
 
-  .col-body {
-    min-height: 100px; padding-bottom: 1rem;
-    transition: background 0.2s; border-radius: 6px;
-  }
+/* ── TASK CARD ── */
+.tcard{
+  background:var(--bg);border:1px solid var(--border);
+  border-radius:3px;padding:.8rem;margin-bottom:.5rem;
+  cursor:pointer;position:relative;transition:transform .1s;
+}
+.tcard:hover{transform:translateY(-1px);border-color:var(--accent-mid);}
+.tcard::before{
+  content:'';position:absolute;left:0;top:4px;bottom:4px;
+  width:3px;border-radius:0 2px 2px 0;
+}
+.tcard[data-e=low]::before{background:var(--e-low);}
+.tcard[data-e=medium]::before{background:var(--e-med);}
+.tcard[data-e=high]::before{background:var(--e-high);}
 
-  .card {
-    background: var(--surface); border: 1px solid var(--border);
-    border-radius: 6px; padding: 0.75rem; margin-bottom: 0.75rem;
-    cursor: grab; box-shadow: 0 1px 2px rgba(0,0,0,0.02);
-    transition: opacity 0.2s, transform 0.1s;
-  }
-  .card:active { cursor: grabbing; transform: scale(0.98); }
-  .card-title { font-size: 0.95rem; margin-bottom: 0.3rem; }
-  .card-meta { display: flex; gap: 0.5rem; font-size: 0.75rem; color: var(--muted); font-family: 'JetBrains Mono', monospace; }
+/* Staleness Style */
+.tcard.is-stale{background:var(--stale-bg);border-style:dashed;}
+.stale-icon{margin-left:.4rem;font-size:.8rem;opacity:.6;}
 
-  .col-add-btn {
-    width: 100%; padding: 0.75rem; background: transparent;
-    border: 1px dashed var(--border); color: var(--muted);
-    border-radius: 6px; cursor: pointer; transition: 0.2s;
-  }
-  .col-add-btn:hover { background: var(--surface2); color: var(--text); }
+.tc-row{display:flex;gap:.6rem;align-items:flex-start;}
+.tc-check{
+  width:16px;height:16px;border:1px solid var(--border);
+  border-radius:2px;flex-shrink:0;margin-top:2px;display:flex;align-items:center;justify-content:center;
+}
+.tcard.done-card{opacity:.4;}
+.tcard.done-card .tc-title{text-decoration:line-through;}
+.tc-title{font-size:.9rem;line-height:1.4;flex:1;}
+.tc-meta{margin-top:.4rem;display:flex;gap:.6rem;font-family:'JetBrains Mono',monospace;font-size:.48rem;color:var(--muted);text-transform:uppercase;}
 
-  /* Modal */
-  .modal-overlay {
-    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(0,0,0,0.5); display: none;
-    justify-content: center; align-items: center; z-index: 100;
-  }
-  .modal {
-    background: var(--surface); width: 100%; max-width: 500px;
-    border-radius: 12px; padding: 1.5rem; display: flex; flex-direction: column; gap: 1rem;
-    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-  }
-  .modal input[type="text"], .modal textarea, .modal select {
-    width: 100%; padding: 0.75rem; border: 1px solid var(--border);
-    border-radius: 6px; font-family: inherit; font-size: 1rem;
-    box-sizing: border-box;
-  }
-  .modal textarea { resize: vertical; min-height: 80px; }
-  
-  .segment-group { display: flex; gap: 0.5rem; background: var(--surface2); padding: 0.3rem; border-radius: 6px; }
-  .seg-btn {
-    flex: 1; padding: 0.5rem; border: 1px solid transparent; background: transparent;
-    border-radius: 4px; cursor: pointer; font-size: 0.85rem; font-family: 'JetBrains Mono', monospace;
-  }
-  .seg-btn.active { background: var(--surface); box-shadow: var(--shadow); border-color: var(--border); }
+/* ── QUICK ADD IN COLUMN ── */
+.col-quick-add{
+  padding:.5rem;border-top:1px solid var(--border);
+}
+.col-in{
+  width:100%;background:var(--bg);border:1px solid var(--border);
+  padding:.4rem .6rem;font-family:'Literata',serif;font-size:.75rem;
+  border-radius:2px;
+}
 
-  .modal-actions { display: flex; justify-content: flex-end; gap: 1rem; margin-top: 1rem; }
-  .btn { padding: 0.5rem 1.5rem; border: none; border-radius: 6px; cursor: pointer; font-weight: 500; }
-  .btn-primary { background: var(--text); color: var(--surface); }
-  .btn-ghost { background: transparent; color: var(--muted); }
-  .btn-ghost:hover { background: var(--surface2); }
-  
-  .done-toggle-row { display: flex; justify-content: space-between; font-size: 0.85rem; color: var(--muted); cursor: pointer; margin-top: 1rem;}
-  .done-list { display: none; margin-top: 0.5rem; opacity: 0.7; }
-  .done-toggle-row.open + .done-list { display: block; }
+/* ── MODAL ── */
+.modal{
+  position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:1000;
+  display:none;align-items:center;justify-content:center;backdrop-filter:blur(2px);
+}
+.mcard{
+  background:var(--bg);padding:2rem;border-radius:3px;width:100%;max-width:400px;
+  border:1px solid var(--border);
+}
+.inp{
+  width:100%;padding:.6rem;margin-bottom:.8rem;background:var(--surface);
+  border:1px solid var(--border);font-family:'Literata',serif;
+}
+.pbtn{
+  width:100%;padding:.7rem;background:var(--accent);color:#fff;
+  font-family:'JetBrains Mono',monospace;font-size:.6rem;text-transform:uppercase;cursor:pointer;
+}
 
-  .empty { text-align: center; color: var(--muted); font-size: 0.85rem; padding: 2rem 0; font-style: italic; }
+#auth-gate{
+  position:fixed;inset:0;background:var(--bg);z-index:9999;
+  display:none;align-items:center;justify-content:center;
+}
+
+@media(max-width:700px){
+  #board{flex-direction:column;align-items:stretch;}
+  .col{width:100%;min-width:0;}
+}
 </style>
 </head>
 <body>
 
-<header>
-  <div class="logo">ScannerPlanner</div>
-  <button class="btn btn-primary" onclick="openMod()">+ Завдання</button>
-</header>
-
-<nav id="nav-contexts"></nav>
-<main>
-  <div id="board" class="board"></div>
-</main>
-
-<div id="modal" class="modal-overlay">
-  <div class="modal">
-    <input type="text" id="f-title" placeholder="Що потрібно зробити?" autocomplete="off">
-    <textarea id="f-note" placeholder="Нотатки, посилання або ідеї..."></textarea>
-    
-    <div style="display:flex; gap: 1rem;">
-      <div style="flex:1;">
-        <label style="font-size: 0.8rem; color: var(--muted); margin-bottom: 0.3rem; display:block;">Контекст</label>
-        <select id="f-ctx"></select>
-      </div>
-    </div>
-
-    <div>
-      <label style="font-size: 0.8rem; color: var(--muted); margin-bottom: 0.3rem; display:block;">Тип</label>
-      <div class="segment-group" id="seg-kinds"></div>
-      <input type="hidden" id="f-kind" value="task">
-    </div>
-
-    <div>
-      <label style="font-size: 0.8rem; color: var(--muted); margin-bottom: 0.3rem; display:block;">Енергія</label>
-      <div class="segment-group" id="seg-energies"></div>
-      <input type="hidden" id="f-energy" value="medium">
-    </div>
-
-    <div class="modal-actions">
-      <button class="btn btn-ghost" onclick="closeMod()">Скасувати</button>
-      <button class="btn btn-primary" onclick="saveTask()">Зберегти</button>
-    </div>
+<div id="auth-gate">
+  <div class="mcard" style="text-align:center">
+    <div style="font-family:'Literata';font-size:1.4rem;margin-bottom:1.5rem">Scanner<span>Tasks</span></div>
+    <input type="email" id="email" class="inp" placeholder="Email">
+    <input type="password" id="pass" class="inp" placeholder="Password">
+    <button class="pbtn" onclick="doLogin()">Увійти</button>
   </div>
 </div>
 
+<header class="topbar">
+  <div class="logo-btn" onclick="location.reload()">
+    <svg width="24" height="24" viewBox="0 0 32 32" fill="var(--accent)"><circle cx="16" cy="15" r="4"/></svg>
+    Scanner<span>Tasks</span>
+  </div>
+  
+  <div class="btn-group">
+    <button class="ctrl-btn" onclick="runRoulette()" title="Випадкове з Колись">🎲 Що зараз?</button>
+    <button class="ctrl-btn" id="focus-btn" onclick="toggleFocus()">🎯 Фокус</button>
+    <button class="ctrl-btn" onclick="toggleTheme()">☾ тема</button>
+  </div>
+</header>
+
+<nav class="ctx-bar" id="ctx-bar">
+  <button class="ctx-tab active" data-ctx="inbox">Вхідні <span class="badge" id="b-inbox">0</span></button>
+  <button class="ctx-tab" data-ctx="today">Сьогодні <span class="badge" id="b-today">0</span></button>
+  <button class="ctx-tab" data-ctx="waiting">Чекаю <span class="badge" id="b-waiting">0</span></button>
+  <button class="ctx-tab" data-ctx="someday">Колись <span class="badge" id="b-someday">0</span></button>
+</nav>
+
+<div class="app-body">
+  <div class="energy-bar">
+    <span class="ebar-lbl">Енергія</span>
+    <button class="echip" data-e="low">🌿 Низька</button>
+    <button class="echip" data-e="medium">⚡ Середня</button>
+    <button class="echip" data-e="high">🔥 Висока</button>
+  </div>
+
+  <div id="board"></div>
+</div>
+
+<div id="modal" class="modal" onclick="if(event.target===this)closeMod()">
+  <div class="mcard" id="mbody"></div>
+</div>
+
 <script>
-// ==========================================
-// НАЛАШТУВАННЯ SUPABASE
-// ==========================================
-const SUPABASE_URL = 'https://mlkdphygsdfcanztbtez.supabase.co';
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1sa2RwaHlnc2RmY2FuenRidGV6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYyODAwNTAsImV4cCI6MjA5MTg1NjA1MH0.PfjkZXua-9tp2lxVsBD3YBUNpx_USmMha5BQBZcGLFc';
-const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
-// ==========================================
-// КОНФІГУРАЦІЯ СКАЛЕРА
-// ==========================================
-const CTXS = {
-  'inbox': { lbl: 'Inbox', desc: 'Вхідні ідеї та завдання. Оцініть енергію.' },
-  'today': { lbl: 'Сьогодні', desc: 'Те, на чому ми фокусуємось прямо зараз.' },
-  'waiting': { lbl: 'Чекаю', desc: 'Залежить від інших або обставин.' },
-  'someday': { lbl: 'Колись', desc: 'Ідеї для майбутнього дослідження.' }
-};
-
-const ENERGIES = [
-  { id: 'low', lbl: 'Низька', color: 'var(--low)', icon: '🔋' },
-  { id: 'medium', lbl: 'Середня', color: 'var(--medium)', icon: '⚡' },
-  { id: 'high', lbl: 'Висока', color: 'var(--high)', icon: '🔥' }
-];
-
-const KINDS = [
-  { id: 'task', lbl: 'Завдання', icon: '✓' },
-  { id: 'project', lbl: 'Проєкт', icon: '🏗️' },
-  { id: 'interest', lbl: 'Інтерес', icon: '💡' },
-  { id: 'zone', lbl: 'Зона', icon: '🔄' }
-];
+/* ── CONFIG ── */
+const SB_URL = "https://mlkdphygsdfcanztbtez.supabase.co"; 
+const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1sa2RwaHlnc2RmY2FuenRidGV6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYyODAwNTAsImV4cCI6MjA5MTg1NjA1MH0.PfjkZXua-9tp2lxVsBD3YBUNpx_USmMha5BQBZcGLFc";
+const sb = supabase.createClient(SB_URL, SB_KEY);
 
 let tasks = [];
 let activeCtx = 'inbox';
+let activeEnergy = new Set();
+let focusMode = false;
 let editId = null;
 
-// ==========================================
-// ІНІЦІАЛІЗАЦІЯ ТА РЕНДЕР
-// ==========================================
-async function init() {
-  renderNav();
-  initSegments();
-  
-  // Додавання опцій у Select контекстів
-  const sel = document.getElementById('f-ctx');
-  Object.entries(CTXS).forEach(([k, v]) => {
-    const opt = document.createElement('option');
-    opt.value = k; opt.textContent = v.lbl;
-    sel.appendChild(opt);
-  });
+const CTXS = {
+  inbox: {lbl:'Вхідні', color:'#6b6963'},
+  today: {lbl:'Сьогодні', color:'#2d5a27'},
+  waiting: {lbl:'Чекаю', color:'#b07d3a'},
+  someday: {lbl:'Колись', color:'#8a8880'}
+};
 
-  await sync();
+/* ── AUTH ── */
+async function doLogin(){
+  const {error} = await sb.auth.signInWithPassword({email:email.value, password:pass.value});
+  if(error) alert(error.message);
 }
 
-async function sync() {
-  const { data, error } = await sb.from('scanner_tasks').select('*').order('created_at', { ascending: false });
-  if (data) tasks = data;
+sb.auth.onAuthStateChange((ev, sess) => {
+  document.getElementById('auth-gate').style.display = sess ? 'none' : 'flex';
+  if(sess) sync();
+});
+
+/* ── DATA ── */
+async function sync(){
+  const {data} = await sb.from('scanner_tasks').select('*').order('created_at', {ascending:false});
+  tasks = data || [];
+  updateBadges();
   render();
 }
 
-function renderNav() {
-  const nav = document.getElementById('nav-contexts');
-  nav.innerHTML = '';
-  Object.entries(CTXS).forEach(([k, v]) => {
-    const btn = document.createElement('button');
-    btn.className = `nav-btn ${k === activeCtx ? 'active' : ''}`;
-    btn.textContent = v.lbl;
-    btn.onclick = () => { activeCtx = k; renderNav(); render(); };
-    nav.appendChild(btn);
+function updateBadges(){
+  Object.keys(CTXS).forEach(k => {
+    const count = tasks.filter(t => t.context === k && !t.done).length;
+    document.getElementById('b-'+k).textContent = count;
   });
 }
 
-function render() {
+/* ── LOGIC ── */
+function toggleFocus(){
+  focusMode = !focusMode;
+  document.getElementById('focus-btn').classList.toggle('active', focusMode);
+  render();
+}
+
+function toggleTheme(){
+  const curr = document.documentElement.dataset.theme;
+  document.documentElement.dataset.theme = curr === 'dark' ? 'light' : 'dark';
+}
+
+function runRoulette(){
+  const options = tasks.filter(t => 
+    t.context === 'someday' && 
+    !t.done && 
+    (t.energy === 'low' || t.energy === 'medium' || !t.energy)
+  );
+  if(!options.length) return alert("У 'Колись' поки немає справ з низькою енергією.");
+  const pick = options[Math.floor(Math.random() * options.length)];
+  openMod(pick);
+}
+
+async function quickAdd(e, ctx, energy = 'medium'){
+  if(e.key !== 'Enter' || !e.target.value.trim()) return;
+  const title = e.target.value.trim();
+  e.target.value = '';
+  
+  const user = (await sb.auth.getUser()).data.user;
+  await sb.from('scanner_tasks').insert([{
+    title, context: ctx, energy, user_id: user.id, kind: 'task'
+  }]);
+  sync();
+}
+
+/* ── RENDER ── */
+function render(){
   const board = document.getElementById('board');
   board.innerHTML = '';
-  const ctxTasks = tasks.filter(t => t.context === activeCtx);
-  const activeT = ctxTasks.filter(t => !t.done);
-  const doneT = ctxTasks.filter(t => t.done);
 
-  if (activeCtx === 'inbox') {
-    // В INBOX розбиваємо по енергії
-    ENERGIES.forEach(en => {
-      const colTasks = activeT.filter(t => (t.energy || 'medium') === en.id);
-      const colDone = doneT.filter(t => (t.energy || 'medium') === en.id);
-      board.appendChild(buildCol(en.lbl, en.color, en.icon, colTasks, colDone, en.id, null));
+  let list = tasks.filter(t => t.context === activeCtx);
+  
+  // Apply Focus Mode
+  if(focusMode && activeCtx === 'today'){
+    list = list.filter(t => t.kind === 'task' || t.kind === null);
+  }
+
+  // Apply Energy Filter
+  if(activeEnergy.size) list = list.filter(t => activeEnergy.has(t.energy || 'medium'));
+
+  const active = list.filter(t => !t.done);
+  const done = list.filter(t => t.done);
+
+  if(activeCtx === 'inbox'){
+    // Inbox shows 3 columns by energy
+    ['low','medium','high'].forEach(en => {
+      board.appendChild(buildCol(en.toUpperCase(), active.filter(a => (a.energy||'medium')===en), done.filter(d => (d.energy||'medium')===en), en));
     });
   } else {
-    // В ІНШИХ вкладках розбиваємо по типах (Wall Calendar View)
-    const desc = document.createElement('p');
-    desc.style.cssText = 'width:100%; margin-top:0; color:var(--muted); font-style:italic; font-size:0.9rem;';
-    desc.textContent = CTXS[activeCtx].desc;
-    board.appendChild(desc);
-
-    KINDS.forEach(k => {
-      const colTasks = activeT.filter(t => (t.kind || 'task') === k.id);
-      const colDone = doneT.filter(t => (t.kind || 'task') === k.id);
-      board.appendChild(buildCol(k.lbl, 'var(--accent-mid)', k.icon, colTasks, colDone, null, k.id));
-    });
+    board.appendChild(buildCol(CTXS[activeCtx].lbl, active, done, 'medium'));
   }
 }
 
-// ==========================================
-// КОЛОНКИ ТА КАРТКИ (DRAG & DROP)
-// ==========================================
-function buildCol(title, color, icon, active, done, energyId, kindId) {
+function buildCol(title, active, done, defEnergy){
   const col = document.createElement('div');
   col.className = 'col';
-
   col.innerHTML = `
     <div class="col-head">
-      <div class="col-title">
-        <span class="col-dot" style="background:${color}"></span>
-        ${icon ? `<span>${icon}</span>` : ''} ${title}
-      </div>
-      <span class="col-count">${active.length}</span>
-    </div>`;
-
-  const body = document.createElement('div');
-  body.className = 'col-body';
+      <div class="col-title"><span class="col-dot" style="background:var(--e-${defEnergy})"></span>${title}</div>
+      <div style="font-size:.5rem; opacity:.5">${active.length}</div>
+    </div>
+    <div class="col-body"></div>
+    <div class="col-quick-add">
+      <input class="col-in" placeholder="+ Швидке завдання..." onkeydown="quickAdd(event, '${activeCtx}', '${defEnergy}')">
+    </div>
+  `;
+  const body = col.querySelector('.col-body');
+  active.forEach(t => body.appendChild(mkCard(t)));
   
-  // Drag and Drop Zone
-  body.ondragover = (e) => { e.preventDefault(); };
-  body.ondragenter = (e) => { e.preventDefault(); body.style.background = 'var(--surface2)'; };
-  body.ondragleave = (e) => { body.style.background = ''; };
-  body.ondrop = async (e) => {
-    e.preventDefault();
-    body.style.background = '';
-    const taskId = e.dataTransfer.getData('text/plain');
-    const t = tasks.find(x => x.id === taskId);
-    if (!t) return;
-
-    let updates = {};
-    if (energyId && t.energy !== energyId) updates.energy = energyId;
-    if (kindId && t.kind !== kindId) updates.kind = kindId;
-
-    if (Object.keys(updates).length > 0) {
-      Object.assign(t, updates); // Оптимістичне оновлення
-      render();
-      await sb.from('scanner_tasks').update(updates).eq('id', taskId);
-      sync();
-    }
-  };
-
-  if (active.length === 0) {
-    body.innerHTML = `<div class="empty">Немає записів</div>`;
-  } else {
-    active.forEach(t => body.appendChild(mkCard(t)));
-  }
-  col.appendChild(body);
-
-  const addRow = document.createElement('div');
-  addRow.innerHTML = `<button class="col-add-btn">+ додати</button>`;
-  addRow.querySelector('button').onclick = () => openMod(null, energyId, kindId);
-  col.appendChild(addRow);
-
-  if (done.length > 0) {
-    const dtr = document.createElement('div');
-    dtr.className = 'done-toggle-row';
-    dtr.innerHTML = `<span>Завершені (${done.length})</span> <span>▼</span>`;
-    dtr.onclick = () => dtr.classList.toggle('open');
-    
-    const dl = document.createElement('div');
-    dl.className = 'done-list';
-    done.forEach(t => dl.appendChild(mkCard(t)));
-    
-    col.appendChild(dtr);
-    col.appendChild(dl);
+  if(done.length > 0){
+    const dHead = document.createElement('div');
+    dHead.style.cssText = "font-size:.5rem; text-transform:uppercase; margin:1rem 0 .5rem; opacity:.4; text-align:center";
+    dHead.textContent = "Завершені";
+    body.appendChild(dHead);
+    done.forEach(t => body.appendChild(mkCard(t)));
   }
   return col;
 }
 
-function mkCard(t) {
+function mkCard(t){
   const el = document.createElement('div');
-  el.className = 'card';
-  el.draggable = true;
+  const isStale = t.context === 'inbox' && (Date.now() - new Date(t.created_at)) > 259200000; // 3 days
   
-  el.ondragstart = (e) => {
-    e.dataTransfer.setData('text/plain', t.id);
-    setTimeout(() => el.style.opacity = '0.4', 0);
-  };
-  el.ondragend = () => { el.style.opacity = '1'; };
-  
-  el.onclick = () => openMod(t);
-  
-  const enCfg = ENERGIES.find(x => x.id === (t.energy || 'medium'));
-  const kCfg = KINDS.find(x => x.id === (t.kind || 'task'));
+  el.className = `tcard ${t.done ? 'done-card' : ''} ${isStale ? 'is-stale' : ''}`;
+  el.dataset.e = t.energy || 'medium';
   
   el.innerHTML = `
-    <div class="card-title" style="text-decoration: ${t.done ? 'line-through' : 'none'}">${t.title}</div>
-    <div class="card-meta">
-      <span style="color:${enCfg?.color}">${enCfg?.icon || ''} ${enCfg?.lbl || ''}</span>
-      <span>• ${kCfg?.lbl || ''}</span>
+    <div class="tc-row">
+      <div class="tc-check" onclick="event.stopPropagation(); toggleDone('${t.id}', ${t.done})">${t.done ? '✓' : ''}</div>
+      <div class="tc-title">
+        ${t.title} ${isStale ? '<span class="stale-icon" title="Залежалося">🕸️</span>' : ''}
+      </div>
+    </div>
+    <div class="tc-meta">
+      <span>${t.kind || 'task'}</span>
+      ${t.snoozed_until ? `<span>⏳ ${t.snoozed_until}</span>` : ''}
     </div>
   `;
+  el.onclick = () => openMod(t);
   return el;
 }
 
-// ==========================================
-// МОДАЛЬНЕ ВІКНО ТА ФОРМА
-// ==========================================
-function initSegments() {
-  const kBox = document.getElementById('seg-kinds');
-  KINDS.forEach(k => {
-    const b = document.createElement('button');
-    b.className = 'seg-btn'; b.textContent = k.lbl;
-    b.dataset.k = k.id;
-    b.onclick = () => segSel(b, 'k');
-    kBox.appendChild(b);
-  });
-
-  const eBox = document.getElementById('seg-energies');
-  ENERGIES.forEach(e => {
-    const b = document.createElement('button');
-    b.className = 'seg-btn'; b.textContent = e.lbl;
-    b.dataset.e = e.id;
-    b.onclick = () => segSel(b, 'e');
-    eBox.appendChild(b);
-  });
-}
-
-function segSel(btn, attr) {
-  const parent = btn.parentElement;
-  parent.querySelectorAll('.seg-btn').forEach(b => {
-    b.classList.remove('active');
-    b.style.borderColor = ''; b.style.color = '';
-  });
-  
-  btn.classList.add('active');
-  
-  if (attr === 'e') {
-    const ecfg = ENERGIES.find(x => x.id === btn.dataset.e);
-    if (ecfg) { btn.style.borderColor = ecfg.color; btn.style.color = ecfg.color; }
-  }
-  
-  // ВИПРАВЛЕНО БАГ ЗІ ЗБЕРЕЖЕННЯМ
-  const targetInputId = attr === 'k' ? 'f-kind' : 'f-energy';
-  const hid = document.getElementById(targetInputId);
-  if (hid) hid.value = btn.dataset[attr];
-}
-
-function openMod(item = null, defaultEnergy = null, defaultKind = null) {
-  editId = item?.id || null;
-  document.getElementById('modal').style.display = 'flex';
-  
-  document.getElementById('f-title').value = item?.title || '';
-  document.getElementById('f-note').value = item?.note || '';
-  document.getElementById('f-ctx').value = item?.context || activeCtx;
-  
-  const kVal = item?.kind || defaultKind || 'task';
-  const eVal = item?.energy || defaultEnergy || 'medium';
-  
-  document.getElementById('f-kind').value = kVal;
-  document.getElementById('f-energy').value = eVal;
-  
-  const kBtn = document.querySelector(`.seg-btn[data-k="${kVal}"]`);
-  if (kBtn) segSel(kBtn, 'k');
-  
-  const eBtn = document.querySelector(`.seg-btn[data-e="${eVal}"]`);
-  if (eBtn) segSel(eBtn, 'e');
-  
-  document.getElementById('f-title').focus();
-}
-
-function closeMod() {
-  document.getElementById('modal').style.display = 'none';
-  editId = null;
-}
-
-document.addEventListener('keydown', e => { if (e.key === 'Escape') closeMod(); });
-
-async function saveTask() {
-  const title = document.getElementById('f-title').value.trim();
-  if (!title) { document.getElementById('f-title').focus(); return; }
-  
-  const { data: { user } } = await sb.auth.getUser();
-  if (!user) { alert("Ви не авторизовані в Supabase!"); return; }
-
-  const payload = {
-    title,
-    note: document.getElementById('f-note').value.trim() || null,
-    kind: document.getElementById('f-kind').value || 'task',
-    energy: document.getElementById('f-energy').value || 'medium',
-    context: document.getElementById('f-ctx').value || 'inbox',
-    user_id: user.id
-  };
-
-  if (editId) {
-    await sb.from('scanner_tasks').update(payload).eq('id', editId);
-  } else {
-    await sb.from('scanner_tasks').insert([payload]);
-  }
-  
-  closeMod();
+/* ── MODAL & ACTIONS ── */
+async function toggleDone(id, curr){
+  await sb.from('scanner_tasks').update({done: !curr, done_at: !curr ? new Date() : null}).eq('id', id);
   sync();
 }
 
-// Запуск
-document.addEventListener('DOMContentLoaded', init);
+function openMod(t){
+  editId = t?.id || null;
+  const body = document.getElementById('mbody');
+  document.getElementById('modal').style.display = 'flex';
+  
+  body.innerHTML = `
+    <div style="font-family:'Literata'; margin-bottom:1rem">${t ? 'Редагувати' : 'Нове завдання'}</div>
+    <input id="m-ttl" class="inp" value="${t?.title || ''}" placeholder="Назва...">
+    <textarea id="m-note" class="inp" style="height:80px" placeholder="Нотатки...">${t?.note || ''}</textarea>
+    
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:.5rem; margin-bottom:1rem">
+      <select id="m-ctx" class="inp">${Object.entries(CTXS).map(([k,v])=>`<option value="${k}" ${t?.context===k?'selected':''}>${v.lbl}</option>`)}</select>
+      <select id="m-en" class="inp">
+        <option value="low" ${t?.energy==='low'?'selected':''}>🌿 Low</option>
+        <option value="medium" ${t?.energy==='medium'||!t?.energy?'selected':''}>⚡ Medium</option>
+        <option value="high" ${t?.energy==='high'?'selected':''}>🔥 High</option>
+      </select>
+    </div>
+    <button class="pbtn" onclick="save()">Зберегти</button>
+    ${t ? `<div onclick="del('${t.id}')" style="color:var(--error); font-size:.5rem; text-align:center; margin-top:1rem; cursor:pointer; text-transform:uppercase">Видалити</div>` : ''}
+  `;
+}
+
+async function save(){
+  const d = {
+    title: document.getElementById('m-ttl').value,
+    note: document.getElementById('m-note').value,
+    context: document.getElementById('m-ctx').value,
+    energy: document.getElementById('m-en').value,
+    user_id: (await sb.auth.getUser()).data.user.id
+  };
+  if(editId) await sb.from('scanner_tasks').update(d).eq('id', editId);
+  else await sb.from('scanner_tasks').insert([d]);
+  closeMod(); sync();
+}
+
+async function del(id){
+  if(confirm('Видалити?')) { await sb.from('scanner_tasks').delete().eq('id', id); closeMod(); sync(); }
+}
+
+function closeMod(){ document.getElementById('modal').style.display='none'; }
+
+/* ── EVENTS ── */
+document.getElementById('ctx-bar').addEventListener('click', e => {
+  const tab = e.target.closest('.ctx-tab');
+  if(!tab) return;
+  document.querySelectorAll('.ctx-tab').forEach(t => t.classList.remove('active'));
+  tab.classList.add('active');
+  activeCtx = tab.dataset.ctx;
+  render();
+});
+
+document.querySelector('.energy-bar').addEventListener('click', e => {
+  const chip = e.target.closest('.echip');
+  if(!chip) return;
+  const en = chip.dataset.e;
+  activeEnergy.has(en) ? activeEnergy.delete(en) : activeEnergy.add(en);
+  chip.classList.toggle('on');
+  render();
+});
+
+// Initialization
+if(!document.documentElement.dataset.theme) document.documentElement.dataset.theme = 'light';
 </script>
 </body>
 </html>
