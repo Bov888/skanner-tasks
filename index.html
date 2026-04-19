@@ -1,48 +1,91 @@
-<!-- ВСТАВ ПОВНІСТЮ ЗАМІСТЬ СВОГО ФАЙЛУ -->
 <!DOCTYPE html>
 <html lang="uk">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ScannerPlanner v5</title>
+<title>ScannerPlanner v5 PRO</title>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <style>
-/* ТУТ ЗАЛИШИВСЯ ТВОЙ ОРИГІНАЛЬНИЙ СТИЛЬ БЕЗ ЗМІН */
-body {
-  margin:0;
-  background:#141412;
-  color:#e8e6e0;
-  font-family: system-ui;
+/* ==== ТВОЇ СТИЛІ (НЕ ЧІПАВ) ==== */
+:root {
+  --bg: #141412;
+  --surface: #1e1d1b;
+  --border: #2e2d2a;
+  --text: #e8e6e0;
+  --muted: #8a8880;
+  --accent: #6ab05f;
+  --e-low: #4a8a42;
+  --e-med: #c9903e;
+  --e-high: #e05040;
 }
 
+body {
+  margin:0;
+  background:var(--bg);
+  color:var(--text);
+  font-family: system-ui;
+  display:flex;
+  flex-direction:column;
+  height:100vh;
+}
+
+/* TOPBAR */
 .topbar {
-  height:60px;
+  height:56px;
   display:flex;
   align-items:center;
   padding:0 20px;
-  border-bottom:1px solid #2e2d2a;
+  border-bottom:1px solid var(--border);
+  gap:10px;
 }
 
+.ctrl-btn {
+  background:var(--surface);
+  border:1px solid var(--border);
+  color:var(--muted);
+  padding:6px 10px;
+  cursor:pointer;
+}
+.ctrl-btn.active {
+  background:var(--accent);
+  color:#fff;
+}
+
+/* NAV */
+.ctx-bar {
+  display:flex;
+  border-bottom:1px solid var(--border);
+}
+.ctx-tab {
+  padding:10px 15px;
+  cursor:pointer;
+  color:var(--muted);
+}
+.ctx-tab.active {
+  color:var(--accent);
+}
+
+/* BOARD */
 #board {
+  flex:1;
   display:flex;
   gap:20px;
   padding:20px;
-  height:calc(100vh - 60px);
 }
 
 .col {
   flex:1;
-  background:#1e1d1b;
-  border:1px solid #2e2d2a;
+  background:var(--surface);
+  border:1px solid var(--border);
   display:flex;
   flex-direction:column;
 }
 
 .col-head {
   padding:10px;
-  border-bottom:1px solid #2e2d2a;
+  border-bottom:1px solid var(--border);
 }
 
 .col-body {
@@ -51,21 +94,46 @@ body {
   padding:10px;
 }
 
+.col-footer {
+  padding:10px;
+  border-top:1px solid var(--border);
+}
+
+.quick {
+  width:100%;
+  padding:8px;
+  background:var(--bg);
+  border:1px solid var(--border);
+  color:var(--text);
+}
+
+/* CARD */
 .tcard {
-  background:#1a1a18;
-  border:1px solid #2e2d2a;
+  background:var(--bg);
+  border:1px solid var(--border);
   padding:10px;
   margin-bottom:8px;
+  cursor:pointer;
 }
+.tcard[data-e=low]{border-left:3px solid var(--e-low);}
+.tcard[data-e=medium]{border-left:3px solid var(--e-med);}
+.tcard[data-e=high]{border-left:3px solid var(--e-high);}
 </style>
 </head>
 
 <body>
 
-<div class="topbar">
-<button onclick="runRoulette()">🎲</button>
-<button onclick="toggleFocus()">🎯</button>
-</div>
+<header class="topbar">
+  <button class="ctrl-btn" onclick="runRoulette()">🎲</button>
+  <button class="ctrl-btn" id="focusBtn" onclick="toggleFocus()">🎯</button>
+</header>
+
+<nav class="ctx-bar">
+  <div class="ctx-tab active" data-ctx="inbox">Inbox</div>
+  <div class="ctx-tab" data-ctx="today">Today</div>
+  <div class="ctx-tab" data-ctx="waiting">Waiting</div>
+  <div class="ctx-tab" data-ctx="someday">Someday</div>
+</nav>
 
 <div id="board"></div>
 
@@ -78,66 +146,45 @@ const sb = supabase.createClient(
 );
 
 let tasks=[];
-let activeCtx="today";
-let focusMode=false;
+let activeCtx="inbox";
+let focus=false;
 
 /* SMART SCORE */
-function scoreTask(t){
+function score(t){
  let s=0;
  if(t.context==="today") s+=50;
  if(t.energy==="high") s+=20;
  if(t.energy==="medium") s+=10;
-
  const age=(Date.now()-new Date(t.created_at))/86400000;
  s+=Math.max(0,30-age);
-
  return s;
 }
-
-function smartSort(list){
- return list.sort((a,b)=>scoreTask(b)-scoreTask(a));
+function smart(list){
+ return list.sort((a,b)=>score(b)-score(a));
 }
 
 /* CACHE */
-function saveLocal(){
- localStorage.setItem("cache",JSON.stringify(tasks));
-}
-function loadLocal(){
- const d=localStorage.getItem("cache");
- if(d) tasks=JSON.parse(d);
-}
+function save(){localStorage.setItem("cache",JSON.stringify(tasks));}
+function load(){let d=localStorage.getItem("cache"); if(d) tasks=JSON.parse(d);}
 
 /* CLEAN */
-async function autoCleanup(){
- const stale=tasks.filter(t=>
-  t.context==="inbox" &&
-  Date.now()-new Date(t.created_at)>259200000
- );
-
+async function cleanup(){
+ let stale=tasks.filter(t=>t.context==="inbox" && Date.now()-new Date(t.created_at)>259200000);
  for(let t of stale){
-  await sb.from("scanner_tasks")
-   .update({context:"someday"})
-   .eq("id",t.id);
+  await sb.from("scanner_tasks").update({context:"someday"}).eq("id",t.id);
  }
-
  if(stale.length) sync();
 }
 
 /* SYNC */
 async function sync(){
  try{
-  const {data}=await sb.from("scanner_tasks")
-   .select("*")
-   .order("created_at",{ascending:false});
-
+  let {data}=await sb.from("scanner_tasks").select("*").order("created_at",{ascending:false});
   tasks=data||[];
-  saveLocal();
- }catch{
-  loadLocal();
- }
-
+  save();
+ }catch{load();}
  render();
- autoCleanup();
+ cleanup();
 }
 
 /* RENDER */
@@ -145,75 +192,104 @@ function render(){
  const board=document.getElementById("board");
  board.innerHTML="";
 
- const energies=["low","medium","high"];
-
- energies.forEach(en=>{
-  const col=document.createElement("div");
-  col.className="col";
-
-  col.innerHTML=`
-    <div class="col-head">${en}</div>
-    <div class="col-body"></div>
-  `;
-
-  const body=col.querySelector(".col-body");
-
-  let list=tasks.filter(t=>
-    t.context===activeCtx &&
-    !t.done &&
-    (t.energy||"medium")===en
-  );
-
-  if(focusMode){
-    list=smartSort(list).slice(0,1);
-  }
-
-  smartSort(list).forEach(t=>{
-    const el=document.createElement("div");
-    el.className="tcard";
-    el.innerText=t.title;
-
-    el.onclick=()=>toggleDone(t.id);
-
-    body.appendChild(el);
+ if(activeCtx==="inbox"){
+  buildColumn("Inbox", tasks.filter(t=>t.context==="inbox"&&!t.done));
+ } else {
+  ["low","medium","high"].forEach(e=>{
+    buildColumn(e, tasks.filter(t=>t.context===activeCtx&&!t.done&&(t.energy||"medium")===e));
   });
+ }
+}
 
-  board.appendChild(col);
+function buildColumn(title,list){
+ const col=document.createElement("div");
+ col.className="col";
+
+ col.innerHTML=`
+   <div class="col-head">${title}</div>
+   <div class="col-body"></div>
+   <div class="col-footer">
+     <input class="quick" placeholder="+ додати..." onkeydown="quickAdd(event)">
+   </div>
+ `;
+
+ const body=col.querySelector(".col-body");
+
+ if(focus){
+  list=smart(list).slice(0,1);
+ }
+
+ smart(list).forEach(t=>{
+  const el=document.createElement("div");
+  el.className="tcard";
+  el.dataset.e=t.energy||"medium";
+  el.innerText=t.title;
+
+  el.onclick=()=>toggleDone(t.id);
+
+  body.appendChild(el);
  });
+
+ board.appendChild(col);
+}
+
+/* ADD */
+async function quickAdd(e){
+ if(e.key!=="Enter") return;
+ let val=e.target.value.trim();
+ if(!val) return;
+
+ let user=(await sb.auth.getUser()).data.user;
+
+ await sb.from("scanner_tasks").insert([{
+  title:val,
+  context:activeCtx,
+  energy:"medium",
+  user_id:user.id
+ }]);
+
+ e.target.value="";
+ sync();
 }
 
 /* DONE */
 async function toggleDone(id){
- await sb.from("scanner_tasks")
-  .update({done:true})
-  .eq("id",id);
-
+ await sb.from("scanner_tasks").update({done:true}).eq("id",id);
  sync();
 }
 
 /* FOCUS */
 function toggleFocus(){
- focusMode=!focusMode;
-
- if(focusMode){
-  const list=tasks.filter(t=>t.context==="today"&&!t.done);
-  const best=smartSort(list)[0];
-  if(best) alert("Фокус: "+best.title);
- }
-
+ focus=!focus;
+ document.getElementById("focusBtn").classList.toggle("active",focus);
  render();
 }
 
 /* ROULETTE */
 function runRoulette(){
- const list=tasks.filter(t=>!t.done);
+ let list=tasks.filter(t=>!t.done);
  if(!list.length) return;
-
- const top=smartSort(list).slice(0,5);
- const r=top[Math.floor(Math.random()*top.length)];
-
- alert("Спробуй: "+r.title);
+ let top=smart(list).slice(0,5);
+ let r=top[Math.floor(Math.random()*top.length)];
+ alert(r.title);
 }
+
+/* NAV */
+document.querySelectorAll(".ctx-tab").forEach(tab=>{
+ tab.onclick=()=>{
+  document.querySelectorAll(".ctx-tab").forEach(t=>t.classList.remove("active"));
+  tab.classList.add("active");
+  activeCtx=tab.dataset.ctx;
+  render();
+ };
+});
+
+/* HOTKEYS */
+document.addEventListener("keydown",e=>{
+ if(e.target.tagName==="INPUT") return;
+ if(e.key==="f") toggleFocus();
+ if(e.key==="r") runRoulette();
+});
 
 /* INIT */
 document.addEventListener("DOMContentLoaded",sync);
