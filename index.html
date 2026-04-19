@@ -3,339 +3,291 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>ScannerPlanner</title>
+<title>ScannerTasks</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Literata:ital,wght@0,300;0,400;0,500;1,300&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
-:root {
-  --bg: #fafaf8; --surface: #f4f3ef; --surface2: #eceae4;
-  --border: #e2e1db; --text: #1a1917; --muted: #6b6963;
-  --accent: #2d5a27; --accent-light: #e8f0e6;
-  --e-low: #6b8f71; --e-med: #b07d3a; --e-high: #8b2010;
+:root{
+  --bg:#fafaf8;--surface:#f4f3ef;--surface2:#eceae4;
+  --border:#e2e1db;--text:#1a1917;--muted:#6b6963;
+  --accent:#2d5a27;--accent-light:#e8f0e6;--accent-mid:#4a8a42;
+  --error:#8b2010;
+  --e-low:#6b8f71;--e-med:#b07d3a;--e-high:#8b2010;
 }
-[data-theme=dark] {
-  --bg: #141412; --surface: #1e1d1b; --surface2: #252422;
-  --border: #2e2d2a; --text: #e8e6e0; --muted: #8a8880;
-  --accent: #6ab05f; --accent-light: #1e2e1c;
-}
-
-* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-body { 
-  background: var(--bg); color: var(--text); 
-  font-family: 'Literata', serif; 
-  height: 100dvh; display: flex; flex-direction: column; overflow: hidden;
+[data-theme=dark]{
+  --bg:#141412;--surface:#1e1d1b;--surface2:#252422;
+  --border:#2e2d2a;--text:#e8e6e0;--muted:#8a8880;
+  --accent:#6ab05f;--accent-light:#1e2e1c;
+  --e-low:#4a8a42;--e-med:#c9903e;--e-high:#e05040;
 }
 
-/* ── HEADER ── */
-.topbar { 
-  height: 60px; display: flex; align-items: center; 
-  padding: 0 1rem; border-bottom: 1px solid var(--border); 
-  gap: 0.5rem; flex-shrink: 0;
+*{margin:0;padding:0;box-sizing:border-box;border:none;outline:none;}
+body{
+  background:var(--bg);color:var(--text);
+  font-family:'Literata',serif;font-weight:300;
+  height:100dvh;overflow:hidden;display:flex;flex-direction:column;
 }
-.logo { font-size: 1rem; font-weight: 400; flex-shrink: 0; }
-.logo span { color: var(--accent); font-style: italic; }
 
-.header-btns { display: flex; gap: 0.4rem; flex: 1; justify-content: flex-end; }
+/* ── TOPBAR ── */
+.topbar{
+  height:52px;display:flex;align-items:center;
+  padding:0 1rem;gap:1rem;border-bottom:1px solid var(--border);
+  background:var(--bg);flex-shrink:0;
+}
+.logo-btn{font-family:'Literata',serif;font-size:1.1rem;flex:1;cursor:pointer;background:none;color:var(--text);text-align:left;}
+.logo-btn span{color:var(--accent);font-style:italic;}
 
-/* ── NAVIGATION (FULL WIDTH) ── */
-.ctx-bar { 
-  display: flex; width: 100%; border-bottom: 1px solid var(--border); flex-shrink: 0;
+/* ── Вкладки на ВСЮ ширину ── */
+.ctx-bar{
+  display:flex;width:100%;border-bottom:1px solid var(--border);
+  background:var(--bg);flex-shrink:0;
 }
-.ctx-tab { 
-  flex: 1; /* Однаковий розмір */
-  font-family: 'JetBrains Mono', monospace; font-size: .55rem; 
-  text-transform: uppercase; color: var(--muted); background: none; 
-  cursor: pointer; padding: 1.2rem 0; border: none; 
-  border-bottom: 3px solid transparent; text-align: center;
+.ctx-tab{
+  flex:1; /* Робить всі вкладки однаковими за розміром */
+  font-family:'JetBrains Mono',monospace;font-size:.55rem;
+  letter-spacing:.05em;text-transform:uppercase;
+  color:var(--muted);background:none;cursor:pointer;
+  padding:1rem 0;border-bottom:2px solid transparent;
+  text-align:center;transition:all .15s;
 }
-.ctx-tab.active { color: var(--accent); border-bottom-color: var(--accent); background: var(--surface); }
+.ctx-tab.active{color:var(--accent);border-bottom-color:var(--accent);background:var(--surface);}
+.ctx-tab .badge{margin-left:4px;opacity:0.6;}
+
+/* ── Кнопка Додати (тепер окрема плаваюча або в шапці) ── */
+.add-btn-fixed{
+  position:fixed;bottom:1.5rem;right:1.5rem;
+  width:56px;height:56px;border-radius:28px;
+  background:var(--accent);color:#fff;font-size:1.5rem;
+  box-shadow:0 4px 12px rgba(0,0,0,0.2);z-index:500;
+  cursor:pointer;display:flex;align-items:center;justify-content:center;
+}
 
 /* ── BOARD ── */
-.app-body { flex: 1; display: flex; overflow: hidden; }
-#board { 
-  display: flex; width: 100%; padding: 1rem; gap: 1rem; 
-  overflow-x: auto; align-items: stretch;
+.app-body{flex:1;display:flex;overflow:hidden;background:var(--bg);}
+#board{
+  flex:1;display:flex;padding:1rem;gap:1rem;
+  overflow-x:auto;align-items:flex-start;
 }
-@media(max-width: 700px) {
-  #board { flex-direction: column; overflow-x: hidden; overflow-y: auto; }
-  .col { min-width: 100% !important; }
+@media(max-width:700px){
+  #board{flex-direction:column;overflow-x:hidden;overflow-y:auto;}
+  .col{width:100% !important;min-width:0 !important;}
 }
 
-.col { 
-  flex: 1; min-width: 320px; max-width: 450px; 
-  background: var(--surface); border: 1px solid var(--border); 
-  border-radius: 4px; display: flex; flex-direction: column; 
+.col{
+  width:320px;min-width:320px;background:var(--surface);
+  border:1px solid var(--border);border-radius:4px;
+  display:flex;flex-direction:column;max-height:100%;
 }
-.col-head { padding: 0.8rem 1rem; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
-.col-title { font-family: 'JetBrains Mono', monospace; font-size: .6rem; text-transform: uppercase; opacity: 0.8; }
-.col-body { flex: 1; overflow-y: auto; padding: 0.6rem; }
+.col-head{padding:.7rem 1rem;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;}
+.col-title{font-family:'JetBrains Mono',monospace;font-size:.6rem;text-transform:uppercase;color:var(--muted);}
+.col-body{flex:1;overflow-y:auto;padding:.5rem;}
 
-/* ── CARDS ── */
-.tcard { 
-  background: var(--bg); border: 1px solid var(--border); 
-  border-radius: 4px; padding: 1rem; margin-bottom: 0.8rem; 
-  cursor: pointer; position: relative; box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+/* ── ТИПОВІ КНОПКИ-СЕГМЕНТИ (як в оригіналі) ── */
+.seg{display:flex;gap:4px;margin-bottom:1rem;}
+.seg-btn{
+  flex:1;padding:.7rem .2rem;border-radius:4px;
+  border:1px solid var(--border);background:var(--bg);color:var(--muted);
+  font-family:'JetBrains Mono',monospace;font-size:.52rem;
+  text-transform:uppercase;cursor:pointer;text-align:center;
 }
-.tcard[data-e=low] { border-left: 4px solid var(--e-low); }
-.tcard[data-e=medium] { border-left: 4px solid var(--e-med); }
-.tcard[data-e=high] { border-left: 4px solid var(--e-high); }
+.seg-btn.on{border-color:var(--accent);color:var(--accent);background:var(--accent-light);}
+.seg-btn[data-e=low].on{border-color:var(--e-low);color:var(--e-low);background:rgba(107,143,113,0.1);}
+.seg-btn[data-e=medium].on{border-color:var(--e-med);color:var(--e-med);background:rgba(176,125,58,0.1);}
+.seg-btn[data-e=high].on{border-color:var(--e-high);color:var(--e-high);background:rgba(139,32,16,0.1);}
 
-.tc-title { font-size: .95rem; line-height: 1.4; margin-bottom: .4rem; }
-.tc-meta { font-family: 'JetBrains Mono', monospace; font-size: .55rem; color: var(--muted); display: flex; justify-content: space-between; align-items: center; }
-.tc-project { color: var(--accent); font-weight: 500; border: 1px solid var(--accent); padding: 1px 4px; border-radius: 2px; margin-right: 5px; }
-
-/* ── BUTTONS ORIGINAL STYLE ── */
-.btn { 
-  background: var(--bg); border: 1px solid var(--border); 
-  color: var(--muted); font-size: .6rem; padding: 0.6rem 0.8rem; 
-  cursor: pointer; font-family: 'JetBrains Mono'; text-transform: uppercase;
-  border-radius: 4px; transition: 0.2s;
+/* ── КАРТКА ЗАВДАННЯ ── */
+.tcard{
+  background:var(--bg);border:1px solid var(--border);
+  border-radius:4px;padding:.8rem;margin-bottom:.5rem;
+  cursor:pointer;position:relative;padding-left:1.2rem;
 }
-.btn-primary { background: var(--accent); color: white; border: none; font-weight: 500; }
-
-/* Кнопки-сегменти у модалці */
-.segment-group { display: flex; gap: 4px; margin-bottom: 1rem; flex-wrap: wrap; }
-.seg-btn { 
-  flex: 1; min-width: 80px; padding: 0.8rem 0.4rem; 
-  background: var(--bg); border: 1px solid var(--border);
-  font-family: 'JetBrains Mono'; font-size: 0.6rem; text-align: center;
-  cursor: pointer; border-radius: 4px; color: var(--muted);
+.tcard::before{
+  content:'';position:absolute;left:0;top:0;bottom:0;width:4px;
+  background:var(--border);border-radius:4px 0 0 4px;
 }
-.seg-btn.active { border-color: var(--accent); color: var(--accent); background: var(--accent-light); }
+.tcard[data-e=low]::before{background:var(--e-low);}
+.tcard[data-e=medium]::before{background:var(--e-med);}
+.tcard[data-e=high]::before{background:var(--e-high);}
+.tc-title{font-size:.9rem;line-height:1.4;margin-bottom:.3rem;}
+.tc-meta{font-family:'JetBrains Mono',monospace;font-size:.5rem;color:var(--muted);text-transform:uppercase;}
 
 /* ── MODAL ── */
-.modal { 
-  position: fixed; inset: 0; background: rgba(0,0,0,0.7); 
-  display: none; align-items: center; justify-content: center; z-index: 2000; padding: 1rem;
+.modal{
+  position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:2000;
+  display:none;align-items:center;justify-content:center;padding:1rem;
 }
-.mcard { 
-  background: var(--bg); padding: 1.5rem; width: 100%; max-width: 500px; 
-  border-radius: 8px; position: relative;
+.mcard{
+  background:var(--bg);padding:1.5rem;width:100%;max-width:450px;
+  border-radius:8px;box-shadow:0 20px 40px rgba(0,0,0,0.3);
 }
-.inp { 
-  width: 100%; padding: 1rem; margin-bottom: 1rem; 
-  border: 1px solid var(--border); background: var(--surface2); 
-  color: var(--text); font-family: inherit; border-radius: 4px; font-size: 1rem;
+.inp{
+  width:100%;padding:.8rem;margin-bottom:.8rem;border-radius:4px;
+  background:var(--surface);color:var(--text);border:1px solid var(--border);
+  font-family:inherit;font-size:.95rem;
+}
+.pbtn{
+  width:100%;padding:1rem;background:var(--accent);color:#fff;
+  font-family:'JetBrains Mono',monospace;font-size:.7rem;border-radius:4px;cursor:pointer;
 }
 
-#auth-gate { position: fixed; inset: 0; background: var(--bg); z-index: 9999; display: flex; align-items: center; justify-content: center; padding: 2rem; }
+#auth-gate{position:fixed;inset:0;background:var(--bg);z-index:9000;display:flex;align-items:center;justify-content:center;}
 </style>
 </head>
 <body>
 
-<div id="auth-gate">
-  <div class="mcard" style="text-align: center;">
-    <div class="logo" style="margin-bottom: 2rem; font-size: 1.5rem;">Scanner<span>Planner</span></div>
+<div id="auth-gate" style="display:none">
+  <div class="mcard" style="text-align:center">
+    <div style="font-size:1.5rem;margin-bottom:1.5rem">Scanner<span>Tasks</span></div>
     <input type="email" id="email" class="inp" placeholder="Email">
     <input type="password" id="pass" class="inp" placeholder="Password">
-    <button class="btn btn-primary" style="width: 100%; padding: 1.2rem;" onclick="doLogin()">Увійти</button>
+    <button class="pbtn" onclick="doLogin()">Увійти</button>
   </div>
 </div>
 
 <header class="topbar">
-  <div class="logo">Scanner<span>Planner</span></div>
-  <div class="header-btns">
-    <button class="btn" onclick="startFiveMin()">⏱️ 5хв</button>
-    <button class="btn btn-primary" onclick="openMod(null)">+ Додати</button>
-  </div>
+  <div class="logo-btn" onclick="location.reload()">Scanner<span>Tasks</span></div>
+  <button class="seg-btn" style="flex:0;padding:.4rem .8rem" onclick="toggleTheme()">Тема</button>
 </header>
 
 <nav class="ctx-bar" id="ctx-bar">
-  <button class="ctx-tab active" data-ctx="inbox">Вхідні <span id="b-inbox">0</span></button>
-  <button class="ctx-tab" data-ctx="today">Сьогодні <span id="b-today">0</span></button>
-  <button class="ctx-tab" data-ctx="waiting">Чекаю <span id="b-waiting">0</span></button>
-  <button class="ctx-tab" data-ctx="someday">Колись <span id="b-someday">0</span></button>
-  <button class="ctx-tab" data-ctx="success">🏆</button>
+  <button class="ctx-tab active" data-ctx="inbox">Вхідні <span class="badge" id="b-inbox">0</span></button>
+  <button class="ctx-tab" data-ctx="today">Сьогодні <span class="badge" id="b-today">0</span></button>
+  <button class="ctx-tab" data-ctx="waiting">Чекаю <span class="badge" id="b-waiting">0</span></button>
+  <button class="ctx-tab" data-ctx="someday">Колись <span class="badge" id="b-someday">0</span></button>
 </nav>
 
-<main class="app-body"><div id="board"></div></main>
+<div class="app-body">
+  <div id="board"></div>
+</div>
+
+<div class="add-btn-fixed" onclick="openMod()">+</div>
 
 <div id="modal" class="modal" onclick="if(event.target===this)closeMod()">
   <div class="mcard">
-    <div id="mttl" style="font-family: 'JetBrains Mono'; font-size: 0.6rem; margin-bottom: 1rem; color: var(--muted); text-transform: uppercase;">Нова ідея</div>
+    <input id="f-title" class="inp" placeholder="Що треба зробити?">
     
-    <input id="f-title" class="inp" placeholder="Що саме спало на думку?">
-    <input id="f-project" class="inp" placeholder="Проєкт (напр. ScannerPlanner)">
-    
-    <div style="font-family: 'JetBrains Mono'; font-size: 0.55rem; margin-bottom: 0.5rem; color: var(--muted);">КОНТЕКСТ</div>
-    <div class="segment-group" id="seg-ctx">
-      <div class="seg-btn" data-val="inbox">Вхідні</div>
-      <div class="seg-btn" data-val="today">Сьогодні</div>
-      <div class="seg-btn" data-val="waiting">Чекаю</div>
-      <div class="seg-btn" data-val="someday">Колись</div>
+    <div style="font-family:'JetBrains Mono';font-size:.5rem;margin-bottom:.4rem;color:var(--muted)">ТИП</div>
+    <div class="seg" id="seg-kind">
+      <button class="seg-btn on" data-k="task">Завдання</button>
+      <button class="seg-btn" data-k="project">Проєкт</button>
+      <button class="seg-btn" data-k="interest">Цікаве</button>
     </div>
 
-    <div style="font-family: 'JetBrains Mono'; font-size: 0.55rem; margin-bottom: 0.5rem; color: var(--muted);">ЕНЕРГІЯ</div>
-    <div class="segment-group" id="seg-en">
-      <div class="seg-btn" data-val="low">🌿 Низька</div>
-      <div class="seg-btn" data-val="medium">⚡ Середня</div>
-      <div class="seg-btn" data-val="high">🔥 Висока</div>
+    <div style="font-family:'JetBrains Mono';font-size:.5rem;margin-bottom:.4rem;color:var(--muted)">ЕНЕРГІЯ</div>
+    <div class="seg" id="seg-energy">
+      <button class="seg-btn" data-e="low">🌿 Low</button>
+      <button class="seg-btn on" data-e="medium">⚡ Med</button>
+      <button class="seg-btn" data-e="high">🔥 High</button>
     </div>
 
-    <button class="btn btn-primary" style="width: 100%; padding: 1rem; font-size: 0.8rem;" onclick="saveTask()">Зберегти задачу</button>
-    <div id="del-btn" style="text-align: center; margin-top: 1.5rem; font-size: 0.6rem; color: var(--e-high); cursor: pointer; display: none;" onclick="deleteTask()">ВИДАЛИТИ БЕЗПОВОРОТНО</div>
+    <button class="pbtn" onclick="saveTask()">Зберегти</button>
+    <div id="del-btn" style="text-align:center;margin-top:1rem;font-size:.6rem;color:var(--error);cursor:pointer;display:none" onclick="delTask()">ВИДАЛИТИ</div>
   </div>
 </div>
 
 <script>
-const SB_URL = "https://mlkdphygsdfcanztbtez.supabase.co"; 
-const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1sa2RwaHlnc2RmY2FuenRidGV6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYyODAwNTAsImV4cCI6MjA5MTg1NjA1MH0.PfjkZXua-9tp2lxVsBD3YBUNpx_USmMha5BQBZcGLFc";
-const sb = supabase.createClient(SB_URL, SB_KEY);
+const SB_URL="https://mlkdphygsdfcanztbtez.supabase.co";
+const SB_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1sa2RwaHlnc2RmY2FuenRidGV6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYyODAwNTAsImV4cCI6MjA5MTg1NjA1MH0.PfjkZXua-9tp2lxVsBD3YBUNpx_USmMha5BQBZcGLFc";
+const sb=supabase.createClient(SB_URL,SB_KEY);
 
-let tasks = [];
-let activeCtx = 'inbox';
-let editId = null;
-let selCtx = 'inbox';
-let selEn = 'medium';
+let tasks=[];
+let activeCtx='inbox';
+let editId=null;
+let selKind='task';
+let selEnergy='medium';
 
-async function doLogin() {
-  const { error } = await sb.auth.signInWithPassword({ email: email.value, password: pass.value });
-  if (error) alert(error.message);
+async function doLogin(){
+  const{error}=await sb.auth.signInWithPassword({email:email.value,password:pass.value});
+  if(error)alert(error.message);
 }
 
-sb.auth.onAuthStateChange((ev, sess) => {
-  document.getElementById('auth-gate').style.display = sess ? 'none' : 'flex';
-  if (sess) sync();
+sb.auth.onAuthStateChange((ev,sess)=>{
+  document.getElementById('auth-gate').style.display=sess?'none':'flex';
+  if(sess)sync();
 });
 
-async function sync() {
-  const { data } = await sb.from('scanner_tasks').select('*').order('created_at', { ascending: false });
-  tasks = data || [];
-  ['inbox', 'today', 'waiting', 'someday'].forEach(k => {
-    const el = document.getElementById('b-' + k);
-    if(el) el.textContent = tasks.filter(t => t.context === k && !t.done).length;
+async function sync(){
+  const{data}=await sb.from('scanner_tasks').select('*').order('created_at',{ascending:false});
+  tasks=data||[];
+  ['inbox','today','waiting','someday'].forEach(c=>{
+    const el=document.getElementById('b-'+c);
+    if(el)el.textContent=tasks.filter(t=>t.context===c&&!t.done).length;
   });
   render();
 }
 
-function render() {
-  const board = document.getElementById('board');
-  board.innerHTML = '';
-  if (activeCtx === 'success') { renderMuseum(board); return; }
-
-  const groups = [
-    {id:'low', lbl:'Низька енергія'},
-    {id:'medium', lbl:'Середня енергія'},
-    {id:'high', lbl:'Висока енергія'}
-  ];
-
-  groups.forEach(g => {
-    const list = tasks.filter(t => t.context === activeCtx && t.energy === g.id && !t.done);
-    const col = document.createElement('div');
-    col.className = 'col';
-    col.innerHTML = `
-      <div class="col-head"><div class="col-title">${g.lbl}</div><div style="font-size:0.6rem; opacity:0.5">${list.length}</div></div>
-      <div class="col-body"></div>
-    `;
-    const body = col.querySelector('.col-body');
-    list.forEach(t => {
-      const card = document.createElement('div');
-      card.className = 'tcard';
-      card.dataset.e = t.energy;
-      card.onclick = () => openMod(t);
-      card.innerHTML = `
-        <div class="tc-title">${t.title}</div>
-        <div class="tc-meta">
-          <span>${t.project ? `<span class="tc-project">${t.project}</span>` : ''}</span>
-          <span style="font-size:1.1rem" onclick="event.stopPropagation(); toggleDone('${t.id}')">◯</span>
-        </div>
-      `;
+function render(){
+  const board=document.getElementById('board');
+  board.innerHTML='';
+  const energies=[{id:'low',n:'Low'},{id:'medium',n:'Medium'},{id:'high',n:'High'}];
+  
+  energies.forEach(en=>{
+    const list=tasks.filter(t=>t.context===activeCtx && (t.energy||'medium')===en.id && !t.done);
+    const col=document.createElement('div');
+    col.className='col';
+    col.innerHTML=`<div class="col-head"><div class="col-title">${en.n}</div></div><div class="col-body"></div>`;
+    const body=col.querySelector('.col-body');
+    list.forEach(t=>{
+      const card=document.createElement('div');
+      card.className='tcard';
+      card.dataset.e=t.energy||'medium';
+      card.onclick=()=>openMod(t);
+      card.innerHTML=`<div class="tc-title">${t.title}</div><div class="tc-meta">${t.kind||'task'}</div>`;
       body.appendChild(card);
     });
     board.appendChild(col);
   });
 }
 
-function renderMuseum(container) {
-  const done = tasks.filter(t => t.done).sort((a,b) => new Date(b.done_at) - new Date(a.done_at));
-  container.innerHTML = `<div style="padding:1rem; width:100%; overflow-y:auto"><h2>🏆 Музей Успіхів</h2><div id="m-list"></div></div>`;
-  const list = container.querySelector('#m-list');
-  done.forEach(t => {
-    const item = document.createElement('div');
-    item.style.padding = '10px 0';
-    item.style.borderBottom = '1px dashed var(--border)';
-    item.innerHTML = `<span style="color:var(--accent)">✔</span> ${t.project?`<b>[${t.project}]</b> `:''}${t.title}`;
-    list.appendChild(item);
-  });
+function openMod(t=null){
+  editId=t?t.id:null;
+  document.getElementById('modal').style.display='flex';
+  document.getElementById('f-title').value=t?t.title:'';
+  document.getElementById('del-btn').style.display=t?'block':'none';
+  selKind=t?t.kind:'task';
+  selEnergy=t?t.energy:'medium';
+  updateSegs();
 }
 
-/* ── MODAL LOGIC ── */
-function openMod(t) {
-  editId = t ? t.id : null;
-  document.getElementById('modal').style.display = 'flex';
-  document.getElementById('f-title').value = t ? t.title : '';
-  document.getElementById('f-project').value = t ? (t.project || '') : '';
-  document.getElementById('del-btn').style.display = t ? 'block' : 'none';
-  document.getElementById('mttl').textContent = t ? 'Редагування' : 'Нова ідея';
-  
-  selCtx = t ? t.context : activeCtx;
-  selEn = t ? t.energy : 'medium';
-  updateSegments();
+function updateSegs(){
+  document.querySelectorAll('#seg-kind .seg-btn').forEach(b=>b.classList.toggle('on',b.dataset.k===selKind));
+  document.querySelectorAll('#seg-energy .seg-btn').forEach(b=>b.classList.toggle('on',b.dataset.e===selEnergy));
 }
 
-function updateSegments() {
-  document.querySelectorAll('#seg-ctx .seg-btn').forEach(b => b.classList.toggle('active', b.dataset.val === selCtx));
-  document.querySelectorAll('#seg-en .seg-btn').forEach(b => b.classList.toggle('active', b.dataset.val === selEn));
+document.getElementById('seg-kind').onclick=e=>{ if(e.target.dataset.k){selKind=e.target.dataset.k;updateSegs();}};
+document.getElementById('seg-energy').onclick=e=>{ if(e.target.dataset.e){selEnergy=e.target.dataset.e;updateSegs();}};
+
+async function saveTask(){
+  const title=document.getElementById('f-title').value.trim();
+  if(!title)return;
+  const user=(await sb.auth.getUser()).data.user;
+  const d={title,kind:selKind,energy:selEnergy,context:activeCtx,user_id:user.id};
+  if(editId)await sb.from('scanner_tasks').update(d).eq('id',editId);
+  else await sb.from('scanner_tasks').insert([d]);
+  closeMod();sync();
 }
 
-document.querySelectorAll('.segment-group').forEach(group => {
-  group.onclick = e => {
-    const btn = e.target.closest('.seg-btn');
-    if(!btn) return;
-    if(group.id === 'seg-ctx') selCtx = btn.dataset.val;
-    else selEn = btn.dataset.val;
-    updateSegments();
-  };
-});
-
-async function saveTask() {
-  const title = document.getElementById('f-title').value.trim();
-  if(!title) return;
-  const user = (await sb.auth.getUser()).data.user;
-  const data = {
-    title,
-    project: document.getElementById('f-project').value.trim() || null,
-    context: selCtx,
-    energy: selEn,
-    user_id: user.id
-  };
-  if(editId) await sb.from('scanner_tasks').update(data).eq('id', editId);
-  else await sb.from('scanner_tasks').insert([data]);
-  closeMod(); sync();
+async function delTask(){
+  if(confirm('Видалити?')){await sb.from('scanner_tasks').delete().eq('id',editId);closeMod();sync();}
 }
 
-async function toggleDone(id) {
-  await sb.from('scanner_tasks').update({ done: true, done_at: new Date() }).eq('id', id);
-  sync();
-}
+function closeMod(){document.getElementById('modal').style.display='none';}
 
-async function deleteTask() {
-  if(confirm('Видалити?')) {
-    await sb.from('scanner_tasks').delete().eq('id', editId);
-    closeMod(); sync();
-  }
-}
-
-function closeMod() { document.getElementById('modal').style.display = 'none'; }
-
-document.getElementById('ctx-bar').onclick = e => {
-  const btn = e.target.closest('.ctx-tab');
-  if(btn) {
-    document.querySelectorAll('.ctx-tab').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    activeCtx = btn.dataset.ctx;
+document.getElementById('ctx-bar').onclick=e=>{
+  const b=e.target.closest('.ctx-tab');
+  if(b){
+    document.querySelectorAll('.ctx-tab').forEach(t=>t.classList.remove('active'));
+    b.classList.add('active');
+    activeCtx=b.dataset.ctx;
     render();
   }
 };
 
-function startFiveMin() {
-  const inbox = tasks.filter(t => t.context === 'inbox' && !t.done);
-  if(!inbox.length) return alert("Вхідні порожні!");
-  openMod(inbox[Math.floor(Math.random() * inbox.length)]);
+function toggleTheme(){
+  const d=document.documentElement;
+  d.dataset.theme=d.dataset.theme==='dark'?'light':'dark';
 }
-
-sync();
 </script>
 </body>
 </html>
