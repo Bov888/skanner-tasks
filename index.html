@@ -20,73 +20,171 @@
   --accent: #6ab05f; --accent-light: #1e2e1c;
 }
 
-* { margin: 0; padding: 0; box-sizing: border-box; }
-body { background: var(--bg); color: var(--text); font-family: 'Literata', serif; height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+body { 
+  background: var(--bg); color: var(--text); 
+  font-family: 'Literata', serif; 
+  height: 100vh; height: 100dvh; 
+  overflow: hidden; display: flex; flex-direction: column; 
+}
 
-.topbar { height: 56px; display: flex; align-items: center; padding: 0 1.5rem; border-bottom: 1px solid var(--border); }
-.logo { font-size: 1.1rem; flex: 1; font-weight: 400; cursor: pointer; }
+/* ── HEADER (FIXED) ── */
+.topbar { 
+  height: 60px; display: flex; align-items: center; 
+  padding: 0 1rem; border-bottom: 1px solid var(--border); 
+  gap: 0.5rem; flex-shrink: 0;
+}
+.logo { 
+  font-size: 1rem; font-weight: 400; cursor: pointer; 
+  white-space: nowrap; flex-shrink: 0;
+}
 .logo span { color: var(--accent); font-style: italic; }
 
-.ctx-bar { display: flex; border-bottom: 1px solid var(--border); }
-.ctx-tab { font-family: 'JetBrains Mono', monospace; font-size: .65rem; text-transform: uppercase; color: var(--muted); background: none; cursor: pointer; padding: 1rem 1.5rem; border: none; border-bottom: 2px solid transparent; }
+.header-btns { display: flex; gap: 0.4rem; flex: 1; justify-content: flex-end; }
+
+/* ── NAVIGATION ── */
+.ctx-bar { 
+  display: flex; border-bottom: 1px solid var(--border); 
+  overflow-x: auto; scrollbar-width: none; flex-shrink: 0;
+}
+.ctx-bar::-webkit-scrollbar { display: none; }
+.ctx-tab { 
+  font-family: 'JetBrains Mono', monospace; font-size: .6rem; 
+  text-transform: uppercase; color: var(--muted); background: none; 
+  cursor: pointer; padding: 1rem 0.8rem; border: none; 
+  border-bottom: 2px solid transparent; white-space: nowrap;
+}
 .ctx-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
-.ctx-tab.drag-over { background: var(--accent-light); }
 
-.app-body { flex: 1; display: flex; overflow: hidden; }
-#board { display: flex; width: 100%; padding: 1.2rem; gap: 1.2rem; align-items: stretch; }
+/* ── BOARD ── */
+.app-body { flex: 1; display: flex; overflow: hidden; position: relative; }
+#board { 
+  display: flex; width: 100%; padding: 1rem; gap: 1rem; 
+  overflow-x: auto; align-items: stretch;
+}
 
-.col { flex: 1; min-width: 280px; background: var(--surface); border: 1px solid var(--border); border-radius: 4px; display: flex; flex-direction: column; }
+@media(max-width: 700px) {
+  #board { flex-direction: column; overflow-x: hidden; overflow-y: auto; }
+  .col { width: 100%; min-width: 100% !important; margin-bottom: 1rem; }
+}
+
+.col { 
+  flex: 1; min-width: 300px; max-width: 400px; 
+  background: var(--surface); border: 1px solid var(--border); 
+  border-radius: 4px; display: flex; flex-direction: column; 
+}
 .col-head { padding: 0.8rem 1rem; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
-.col-title { font-family: 'JetBrains Mono', monospace; font-size: .65rem; text-transform: uppercase; display: flex; align-items: center; gap: .5rem; }
-.col-dot { width: 8px; height: 8px; border-radius: 50%; }
-.col-body { flex: 1; overflow-y: auto; padding: 0.8rem; }
+.col-title { font-family: 'JetBrains Mono', monospace; font-size: .6rem; text-transform: uppercase; }
+.col-body { flex: 1; overflow-y: auto; padding: 0.6rem; min-height: 50px; }
 
-.tcard { background: var(--bg); border: 1px solid var(--border); border-radius: 3px; padding: 1rem; margin-bottom: 0.8rem; cursor: grab; position: relative; }
-.tcard::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; display: none; }
-.tcard[data-e=low]::before { background: var(--e-low); display: block; }
-.tcard[data-e=medium]::before { background: var(--e-med); display: block; }
-.tcard[data-e=high]::before { background: var(--e-high); display: block; }
+/* ── CARDS ── */
+.tcard { 
+  background: var(--bg); border: 1px solid var(--border); 
+  border-radius: 3px; padding: 0.8rem; margin-bottom: 0.6rem; 
+  cursor: pointer; position: relative; transition: transform 0.1s;
+}
+.tcard:active { transform: scale(0.98); }
+.tcard[data-e=low] { border-left: 4px solid var(--e-low); }
+.tcard[data-e=medium] { border-left: 4px solid var(--e-med); }
+.tcard[data-e=high] { border-left: 4px solid var(--e-high); }
 
-.tc-title { font-size: .95rem; line-height: 1.4; margin-bottom: .4rem; }
-.tc-meta { font-family: 'JetBrains Mono', monospace; font-size: .55rem; color: var(--muted); text-transform: uppercase; display: flex; justify-content: space-between; }
+.tc-title { font-size: .9rem; line-height: 1.4; margin-bottom: .3rem; }
+.tc-meta { font-family: 'JetBrains Mono', monospace; font-size: .55rem; color: var(--muted); display: flex; justify-content: space-between; }
+.tc-project { color: var(--accent); font-weight: 500; margin-right: 5px; text-transform: uppercase; }
 
-.ctrl-btn { background: var(--bg); border: 1px solid var(--border); color: var(--muted); font-size: .6rem; padding: .4rem .7rem; cursor: pointer; font-family: 'JetBrains Mono'; }
-.quick-in { width: 100%; padding: 0.7rem; border: 1px solid var(--border); font-family: 'Literata'; background: var(--bg); }
+/* ── MUSEUM ── */
+.museum-view { padding: 1.5rem; width: 100%; overflow-y: auto; background: var(--bg); height: 100%; }
+.month-group { margin-bottom: 2rem; }
+.month-title { font-family: 'JetBrains Mono'; font-size: 0.7rem; color: var(--accent); border-bottom: 1px solid var(--border); padding-bottom: 5px; margin-bottom: 10px; text-transform: uppercase; }
+.success-item { font-size: 0.85rem; padding: 6px 0; border-bottom: 1px dashed var(--border); display: flex; gap: 10px; }
 
-#auth-gate, .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 1000; display: none; align-items: center; justify-content: center; backdrop-filter: blur(2px); }
-#auth-gate { display: flex; background: var(--bg); }
-.mcard { background: var(--bg); padding: 2rem; width: 90%; max-width: 400px; border: 1px solid var(--border); }
-.inp { width: 100%; padding: 0.8rem; margin-bottom: 1rem; border: 1px solid var(--border); background: var(--surface); color: var(--text); font-family: 'Literata'; }
-.pbtn { width: 100%; padding: 1rem; background: var(--accent); color: #fff; border: none; font-family: 'JetBrains Mono'; cursor: pointer; }
+/* ── UI ELEMENTS ── */
+.btn { 
+  background: var(--bg); border: 1px solid var(--border); 
+  color: var(--muted); font-size: .55rem; padding: 0.5rem 0.7rem; 
+  cursor: pointer; font-family: 'JetBrains Mono'; text-transform: uppercase;
+  border-radius: 3px;
+}
+.btn-primary { background: var(--accent); color: white; border: none; }
+
+#timer-box { 
+  position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+  background: var(--accent); color: white; padding: 1rem; border-radius: 8px;
+  display: none; z-index: 1000; box-shadow: 0 10px 30px rgba(0,0,0,0.2); width: 90%; max-width: 400px;
+}
+
+.modal { 
+  position: fixed; inset: 0; background: rgba(0,0,0,0.7); 
+  display: none; align-items: center; justify-content: center; z-index: 2000; padding: 1rem;
+}
+.mcard { 
+  background: var(--bg); padding: 1.5rem; width: 100%; max-width: 450px; 
+  border-radius: 6px; box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+}
+.inp { width: 100%; padding: 0.8rem; margin-bottom: 1rem; border: 1px solid var(--border); background: var(--surface); color: var(--text); font-family: inherit; border-radius: 4px; }
+
+#auth-gate { position: fixed; inset: 0; background: var(--bg); z-index: 9999; display: flex; align-items: center; justify-content: center; padding: 2rem; }
 </style>
 </head>
 <body>
 
 <div id="auth-gate">
-  <div class="mcard">
-    <div class="logo" style="text-align:center; margin-bottom:2rem">Scanner<span>Planner</span></div>
+  <div class="mcard" style="text-align: center;">
+    <div class="logo" style="margin-bottom: 2rem; font-size: 1.5rem;">Scanner<span>Planner</span></div>
     <input type="email" id="email" class="inp" placeholder="Email">
     <input type="password" id="pass" class="inp" placeholder="Password">
-    <button class="pbtn" onclick="doLogin()">Увійти</button>
+    <button class="btn btn-primary" style="width: 100%; padding: 1rem;" onclick="doLogin()">Увійти</button>
   </div>
+</div>
+
+<div id="timer-box">
+  <div style="font-family: 'JetBrains Mono'; font-size: 0.6rem; opacity: 0.8;">⏱️ ТАЙМЕР: ПРОСТО ПОЧНИ (5 ХВ)</div>
+  <div id="timer-task" style="margin: 5px 0; font-weight: 500;"></div>
+  <button onclick="document.getElementById('timer-box').style.display='none'" style="background:none; border:1px solid white; color:white; font-size:0.5rem; cursor:pointer; padding:2px 5px; margin-top:5px;">ЗАКРИТИ</button>
 </div>
 
 <header class="topbar">
   <div class="logo" onclick="location.reload()">Scanner<span>Planner</span></div>
-  <button class="ctrl-btn" onclick="runRoulette()">🎲 Що зараз?</button>
+  <div class="header-btns">
+    <button class="btn" onclick="startFiveMin()">⏱️ 5хв</button>
+    <button class="btn" onclick="toggleTheme()">☾</button>
+    <button class="btn btn-primary" onclick="openMod(null)">+ ТАСК</button>
+  </div>
 </header>
 
 <nav class="ctx-bar" id="ctx-bar">
-  <button class="ctx-tab active" data-ctx="inbox" ondragover="tOver(event)" ondragleave="tLeave(event)" ondrop="tDrop(event, 'inbox')">Вхідні <span id="b-inbox">0</span></button>
-  <button class="ctx-tab" data-ctx="today" ondragover="tOver(event)" ondragleave="tLeave(event)" ondrop="tDrop(event, 'today')">Сьогодні <span id="b-today">0</span></button>
-  <button class="ctx-tab" data-ctx="waiting" ondragover="tOver(event)" ondragleave="tLeave(event)" ondrop="tDrop(event, 'waiting')">Чекаю <span id="b-waiting">0</span></button>
-  <button class="ctx-tab" data-ctx="someday" ondragover="tOver(event)" ondragleave="tLeave(event)" ondrop="tDrop(event, 'someday')">Колись <span id="b-someday">0</span></button>
+  <button class="ctx-tab active" data-ctx="inbox">Вхідні <span id="b-inbox">0</span></button>
+  <button class="ctx-tab" data-ctx="today">Сьогодні <span id="b-today">0</span></button>
+  <button class="ctx-tab" data-ctx="waiting">Чекаю <span id="b-waiting">0</span></button>
+  <button class="ctx-tab" data-ctx="someday">Колись <span id="b-someday">0</span></button>
+  <button class="ctx-tab" data-ctx="success">🏆 Музей</button>
 </nav>
 
-<main class="app-body"><div id="board"></div></main>
+<main class="app-body">
+  <div id="board"></div>
+</main>
 
 <div id="modal" class="modal" onclick="if(event.target===this)closeMod()">
-  <div class="mcard" id="mbody"></div>
+  <div class="mcard">
+    <div id="mttl" style="font-family: 'JetBrains Mono'; font-size: 0.6rem; margin-bottom: 1rem; color: var(--muted);">РЕДАГУВАННЯ</div>
+    <input id="f-title" class="inp" placeholder="Що зробити?">
+    <input id="f-project" class="inp" placeholder="Проєкт (напр. ScannerPlanner)">
+    <div style="display: flex; gap: 0.5rem;">
+      <select id="f-ctx" class="inp">
+        <option value="inbox">Вхідні</option>
+        <option value="today">Сьогодні</option>
+        <option value="waiting">Чекаю</option>
+        <option value="someday">Колись</option>
+      </select>
+      <select id="f-energy" class="inp">
+        <option value="low">🌿 Низька</option>
+        <option value="medium">⚡ Середня</option>
+        <option value="high">🔥 Висока</option>
+      </select>
+    </div>
+    <button class="btn btn-primary" style="width: 100%; padding: 0.8rem;" onclick="saveTask()">Зберегти</button>
+    <div id="del-btn" style="text-align: center; margin-top: 1rem; font-size: 0.6rem; color: var(--e-high); cursor: pointer; display: none;" onclick="deleteTask()">ВИДАЛИТИ</div>
+  </div>
 </div>
 
 <script>
@@ -102,6 +200,7 @@ async function doLogin() {
   const { error } = await sb.auth.signInWithPassword({ email: email.value, password: pass.value });
   if (error) alert(error.message);
 }
+
 sb.auth.onAuthStateChange((ev, sess) => {
   document.getElementById('auth-gate').style.display = sess ? 'none' : 'flex';
   if (sess) sync();
@@ -110,126 +209,152 @@ sb.auth.onAuthStateChange((ev, sess) => {
 async function sync() {
   const { data } = await sb.from('scanner_tasks').select('*').order('created_at', { ascending: false });
   tasks = data || [];
-  ['inbox','today','waiting','someday'].forEach(k => {
-    document.getElementById('b-'+k).textContent = tasks.filter(t => t.context === k && !t.done).length;
+  ['inbox', 'today', 'waiting', 'someday'].forEach(k => {
+    const el = document.getElementById('b-' + k);
+    if(el) el.textContent = tasks.filter(t => t.context === k && !t.done).length;
   });
   render();
-}
-
-function tOver(e) { e.preventDefault(); e.currentTarget.classList.add('drag-over'); }
-function tLeave(e) { e.currentTarget.classList.remove('drag-over'); }
-async function tDrop(e, ctx) {
-  e.preventDefault(); e.currentTarget.classList.remove('drag-over');
-  const id = e.dataTransfer.getData('text');
-  await sb.from('scanner_tasks').update({ context: ctx }).eq('id', id);
-  sync();
 }
 
 function render() {
   const board = document.getElementById('board');
   board.innerHTML = '';
-  const filtered = tasks.filter(t => !t.done);
 
-  if (activeCtx === 'inbox') {
-    board.appendChild(buildCol("Вхідні ідеї", filtered.filter(t => t.context === 'inbox'), null, 'var(--muted)'));
-  } else {
-    const enCfg = [
-      {id:'low', lbl:'Низька енергія', color:'var(--e-low)'},
-      {id:'medium', lbl:'Середня енергія', color:'var(--e-med)'},
-      {id:'high', lbl:'Висока енергія', color:'var(--e-high)'}
-    ];
-    enCfg.forEach(en => {
-      const list = filtered.filter(t => t.context === activeCtx && t.energy === en.id);
-      board.appendChild(buildCol(en.lbl, list, en.id, en.color));
-    });
+  if (activeCtx === 'success') {
+    renderMuseum(board);
+    return;
   }
-}
 
-function buildCol(title, list, energy, color) {
-  const col = document.createElement('div');
-  col.className = 'col';
-  col.ondragover = e => e.preventDefault();
-  col.ondrop = async e => {
-    const id = e.dataTransfer.getData('text');
-    await sb.from('scanner_tasks').update({ context: activeCtx, energy: energy }).eq('id', id);
-    sync();
-  };
-  col.innerHTML = `
-    <div class="col-head"><div class="col-title"><span class="col-dot" style="background:${color}"></span>${title}</div></div>
-    <div class="col-body"></div>
-    <div class="col-footer"><input class="quick-in" placeholder="+ Додати..." onkeydown="handleAdd(event, '${energy||''}')"></div>
-  `;
-  const body = col.querySelector('.col-body');
-  list.forEach(t => {
-    const el = document.createElement('div');
-    el.className = 'tcard';
-    if (t.energy) el.dataset.e = t.energy;
-    el.draggable = true;
-    el.ondragstart = e => e.dataTransfer.setData('text', t.id);
-    el.onclick = () => openMod(t);
-    
-    // Перетворення коду енергії в текст для картки
-    const enText = { low: 'Низька', medium: 'Середня', high: 'Висока' }[t.energy] || '';
+  const enCfg = [
+    {id: 'low', lbl: '🌿 Низька Енергія'},
+    {id: 'medium', lbl: '⚡ Середня Енергія'},
+    {id: 'high', lbl: '🔥 Висока Енергія'}
+  ];
 
-    el.innerHTML = `
-      <div class="tc-title">${t.title}</div>
-      <div class="tc-meta">
-        <span>${enText}</span>
-        <span onclick="event.stopPropagation(); toggleDone('${t.id}')">◯</span>
-      </div>
+  enCfg.forEach(en => {
+    const list = tasks.filter(t => t.context === activeCtx && t.energy === en.id && !t.done);
+    const col = document.createElement('div');
+    col.className = 'col';
+    col.innerHTML = `
+      <div class="col-head"><div class="col-title">${en.lbl}</div><div style="font-size:0.6rem">${list.length}</div></div>
+      <div class="col-body"></div>
     `;
-    body.appendChild(el);
+    const body = col.querySelector('.col-body');
+    list.forEach(t => {
+      const card = document.createElement('div');
+      card.className = 'tcard';
+      card.dataset.e = t.energy;
+      card.onclick = () => openMod(t);
+      card.innerHTML = `
+        <div class="tc-title">${t.title}</div>
+        <div class="tc-meta">
+          <span>${t.project ? `<span class="tc-project">${t.project}</span>` : ''}</span>
+          <span onclick="event.stopPropagation(); toggleDone('${t.id}')">◯</span>
+        </div>
+      `;
+      body.appendChild(card);
+    });
+    board.appendChild(col);
   });
-  return col;
 }
 
-async function handleAdd(e, en) {
-  if (e.key !== 'Enter' || !e.target.value.trim()) return;
-  const user = (await sb.auth.getUser()).data.user;
-  await sb.from('scanner_tasks').insert([{ title: e.target.value.trim(), context: activeCtx, energy: en || null, user_id: user.id }]);
-  e.target.value = ''; sync();
-}
+function renderMuseum(container) {
+  const done = tasks.filter(t => t.done).sort((a,b) => new Date(b.done_at) - new Date(a.done_at));
+  const groups = {};
+  done.forEach(t => {
+    const d = new Date(t.done_at || t.created_at);
+    const key = d.toLocaleString('uk-UA', { month: 'long', year: 'numeric' });
+    if(!groups[key]) groups[key] = [];
+    groups[key].push(t);
+  });
 
-async function toggleDone(id) {
-  await sb.from('scanner_tasks').update({ done: true }).eq('id', id);
-  sync();
+  const museum = document.createElement('div');
+  museum.className = 'museum-view';
+  museum.innerHTML = '<h2 style="margin-bottom:1.5rem">🏛️ Музей Успіхів</h2>';
+  
+  Object.keys(groups).forEach(month => {
+    const sec = document.createElement('div');
+    sec.className = 'month-group';
+    sec.innerHTML = `<div class="month-title">${month}</div>`;
+    groups[month].forEach(t => {
+      sec.innerHTML += `
+        <div class="success-item">
+          <span style="color:var(--accent)">🏆</span>
+          <span>${t.project ? `<b>[${t.project}]</b> ` : ''}${t.title}</span>
+        </div>`;
+    });
+    museum.appendChild(sec);
+  });
+  container.appendChild(museum);
 }
 
 function openMod(t) {
-  editId = t.id;
+  editId = t ? t.id : null;
   document.getElementById('modal').style.display = 'flex';
-  document.getElementById('mbody').innerHTML = `
-    <input id="m-ttl" class="inp" value="${t.title}">
-    <div style="display:flex; gap:10px">
-      <select id="m-ctx" class="inp">${['inbox','today','waiting','someday'].map(k => `<option value="${k}" ${t.context===k?'selected':''}>${k.toUpperCase()}</option>`)}</select>
-      <select id="m-en" class="inp">
-        <option value="">Без енергії</option>
-        <option value="low" ${t.energy==='low'?'selected':''}>Низька енергія</option>
-        <option value="medium" ${t.energy==='medium'?'selected':''}>Середня енергія</option>
-        <option value="high" ${t.energy==='high'?'selected':''}>Висока енергія</option>
-      </select>
-    </div>
-    <button class="pbtn" onclick="save()">Зберегти</button>
-  `;
+  document.getElementById('f-title').value = t ? t.title : '';
+  document.getElementById('f-project').value = t ? (t.project || '') : '';
+  document.getElementById('f-ctx').value = t ? t.context : activeCtx;
+  document.getElementById('f-energy').value = t ? t.energy : 'medium';
+  document.getElementById('del-btn').style.display = t ? 'block' : 'none';
+  document.getElementById('mttl').textContent = t ? 'РЕДАГУВАННЯ' : 'НОВЕ ЗАВДАННЯ';
 }
 
-async function save() {
-  const d = { title: document.getElementById('m-ttl').value, context: document.getElementById('m-ctx').value, energy: document.getElementById('m-en').value || null };
-  await sb.from('scanner_tasks').update(d).eq('id', editId);
+async function saveTask() {
+  const title = document.getElementById('f-title').value;
+  if(!title) return;
+  const user = (await sb.auth.getUser()).data.user;
+  const data = {
+    title,
+    project: document.getElementById('f-project').value || null,
+    context: document.getElementById('f-ctx').value,
+    energy: document.getElementById('f-energy').value,
+    user_id: user.id
+  };
+  
+  if(editId) await sb.from('scanner_tasks').update(data).eq('id', editId);
+  else await sb.from('scanner_tasks').insert([data]);
+  
   closeMod(); sync();
+}
+
+async function toggleDone(id) {
+  await sb.from('scanner_tasks').update({ done: true, done_at: new Date() }).eq('id', id);
+  sync();
+}
+
+async function deleteTask() {
+  if(confirm('Видалити?')) {
+    await sb.from('scanner_tasks').delete().eq('id', editId);
+    closeMod(); sync();
+  }
 }
 
 function closeMod() { document.getElementById('modal').style.display = 'none'; }
 
+function startFiveMin() {
+  const inbox = tasks.filter(t => t.context === 'inbox' && !t.done);
+  if(!inbox.length) return alert("Додай щось у Вхідні спочатку!");
+  const t = inbox[Math.floor(Math.random() * inbox.length)];
+  document.getElementById('timer-task').textContent = t.title;
+  document.getElementById('timer-box').style.display = 'block';
+}
+
 document.getElementById('ctx-bar').onclick = e => {
-  const tab = e.target.closest('.ctx-tab');
-  if (tab) {
-    document.querySelectorAll('.ctx-tab').forEach(t => t.classList.remove('active'));
-    tab.classList.add('active');
-    activeCtx = tab.dataset.ctx;
+  const btn = e.target.closest('.ctx-tab');
+  if(btn) {
+    document.querySelectorAll('.ctx-tab').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    activeCtx = btn.dataset.ctx;
     render();
   }
 };
+
+function toggleTheme() {
+  const d = document.documentElement;
+  d.dataset.theme = d.dataset.theme === 'dark' ? 'light' : 'dark';
+}
+
+sync();
 </script>
 </body>
 </html>
