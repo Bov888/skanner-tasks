@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>ScannerPlanner v3</title>
+<title>ScannerPlanner v3.1</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Literata:ital,wght@0,300;0,400;0,500;1,300&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -20,7 +20,6 @@
   --border: #2e2d2a; --text: #e8e6e0; --muted: #8a8880;
   --accent: #6ab05f; --accent-light: #1e2e1c; --accent-mid: #4a8a42;
   --e-low: #4a8a42; --e-med: #c9903e; --e-high: #e05040;
-  --stale-bg: #1a1a18;
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -38,37 +37,34 @@ body {
 .logo { font-size: 1.1rem; flex: 1; cursor: pointer; font-weight: 400; }
 .logo span { color: var(--accent); font-style: italic; }
 
-.btn-group { display: flex; gap: .5rem; }
 .ctrl-btn {
   background: var(--surface); border: 1px solid var(--border); color: var(--muted);
   font-size: .6rem; font-family: 'JetBrains Mono', monospace; cursor: pointer;
   padding: .5rem .8rem; border-radius: 2px; text-transform: uppercase;
 }
-.ctrl-btn:hover { border-color: var(--accent); color: var(--accent); }
 .ctrl-btn.active { background: var(--accent); color: #fff; }
 
-/* ── NAVIGATION ── */
-.ctx-bar { display: flex; border-bottom: 1px solid var(--border); overflow-x: auto; scrollbar-width: none; }
+/* ── NAVIGATION DROP ZONES ── */
+.ctx-bar { display: flex; border-bottom: 1px solid var(--border); background: var(--bg); }
 .ctx-tab {
   font-family: 'JetBrains Mono', monospace; font-size: .65rem; text-transform: uppercase;
   color: var(--muted); background: none; cursor: pointer; padding: 1rem 1.5rem;
-  border: none; border-bottom: 2px solid transparent; transition: .2s; white-space: nowrap;
+  border: none; border-bottom: 2px solid transparent; transition: .2s;
+  position: relative;
 }
 .ctx-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
-.badge { margin-left: .5rem; font-size: .55rem; opacity: 0.6; }
+.ctx-tab.drag-over { background: var(--accent-light); color: var(--accent); border-bottom-color: var(--accent); }
 
 /* ── BOARD ── */
 .app-body { flex: 1; display: flex; overflow: hidden; }
-#board {
-  display: flex; width: 100%; padding: 1.5rem; gap: 1.5rem; align-items: stretch;
-}
+#board { display: flex; width: 100%; padding: 1.5rem; gap: 1.5rem; align-items: stretch; }
 
 .col {
   flex: 1; min-width: 280px; background: var(--surface);
   border: 1px solid var(--border); border-radius: 4px;
   display: flex; flex-direction: column; transition: all .2s;
 }
-.col.drag-over { background: var(--surface2); border: 1px dashed var(--accent); transform: scale(1.01); }
+.col.drag-over { border: 1px dashed var(--accent); transform: scale(1.01); background: var(--surface2); }
 
 .col-head { padding: 1rem; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
 .col-title { font-family: 'JetBrains Mono', monospace; font-size: .65rem; text-transform: uppercase; display: flex; align-items: center; gap: .5rem; }
@@ -80,29 +76,22 @@ body {
 .tcard {
   background: var(--bg); border: 1px solid var(--border); border-radius: 3px;
   padding: 1rem; margin-bottom: .8rem; cursor: grab; position: relative;
-  transition: transform 0.1s, box-shadow 0.1s;
 }
 .tcard:active { cursor: grabbing; }
-.tcard:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
-.tcard::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; }
-.tcard[data-e=low]::before { background: var(--e-low); }
-.tcard[data-e=medium]::before { background: var(--e-med); }
-.tcard[data-e=high]::before { background: var(--e-high); }
+/* Смужка енергії: тільки якщо атрибут існує і не пустий */
+.tcard::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; display: none; }
+.tcard[data-e=low]::before { background: var(--e-low); display: block; }
+.tcard[data-e=medium]::before { background: var(--e-med); display: block; }
+.tcard[data-e=high]::before { background: var(--e-high); display: block; }
 
-.tcard.is-stale { background: var(--stale-bg); border-style: dashed; opacity: 0.8; }
-.stale-icon { float: right; font-size: .8rem; opacity: 0.5; }
-
-.tc-title { font-size: .95rem; line-height: 1.4; margin-bottom: .5rem; }
+.tc-title { font-size: .95rem; line-height: 1.4; margin-bottom: .4rem; }
 .tc-meta { font-family: 'JetBrains Mono', monospace; font-size: .5rem; color: var(--muted); text-transform: uppercase; }
 
 /* ── QUICK ADD ── */
 .col-footer { padding: .8rem; border-top: 1px solid var(--border); }
-.quick-in {
-  width: 100%; background: var(--bg); border: 1px solid var(--border);
-  padding: .7rem; font-family: 'Literata'; font-size: .85rem; border-radius: 2px;
-}
+.quick-in { width: 100%; background: var(--bg); border: 1px solid var(--border); padding: .7rem; font-family: 'Literata'; font-size: .85rem; }
 
-/* ── MODAL & AUTH ── */
+/* ── MODAL ── */
 .modal, #auth-gate {
   position: fixed; inset: 0; background: rgba(0,0,0,.6); z-index: 1000;
   display: none; align-items: center; justify-content: center; backdrop-filter: blur(2px);
@@ -111,11 +100,6 @@ body {
 .mcard { background: var(--bg); padding: 2rem; width: 100%; max-width: 400px; border: 1px solid var(--border); }
 .inp { width: 100%; padding: .8rem; margin-bottom: 1rem; background: var(--surface); border: 1px solid var(--border); font-family: 'Literata'; color: var(--text); }
 .pbtn { width: 100%; padding: 1rem; background: var(--accent); color: #fff; font-family: 'JetBrains Mono'; text-transform: uppercase; cursor: pointer; border: none; }
-
-@media (max-width: 900px) {
-  #board { flex-direction: column; overflow-y: auto; }
-  .col { min-width: 0; flex: none; }
-}
 </style>
 </head>
 <body>
@@ -132,17 +116,16 @@ body {
 <header class="topbar">
   <div class="logo" onclick="location.reload()">Scanner<span>Planner</span></div>
   <div class="btn-group">
-    <button class="ctrl-btn" onclick="runRoulette()">🎲 Що зараз?</button>
-    <button class="ctrl-btn" id="focus-btn" onclick="toggleFocus()">🎯 Фокус</button>
-    <button class="ctrl-btn" onclick="toggleTheme()">☾ Тема</button>
+    <button class="ctrl-btn" onclick="runRoulette()">🎲 Рулетка</button>
+    <button class="ctrl-btn" onclick="toggleTheme()">☾</button>
   </div>
 </header>
 
 <nav class="ctx-bar" id="ctx-bar">
-  <button class="ctx-tab active" data-ctx="inbox">Вхідні <span class="badge" id="b-inbox">0</span></button>
-  <button class="ctx-tab" data-ctx="today">Сьогодні <span class="badge" id="b-today">0</span></button>
-  <button class="ctx-tab" data-ctx="waiting">Чекаю <span class="badge" id="b-waiting">0</span></button>
-  <button class="ctx-tab" data-ctx="someday">Колись <span class="badge" id="b-someday">0</span></button>
+  <button class="ctx-tab active" data-ctx="inbox" ondragover="tabOver(event)" ondragleave="tabLeave(event)" ondrop="tabDrop(event, 'inbox')">Вхідні <span class="badge" id="b-inbox">0</span></button>
+  <button class="ctx-tab" data-ctx="today" ondragover="tabOver(event)" ondragleave="tabLeave(event)" ondrop="tabDrop(event, 'today')">Сьогодні <span class="badge" id="b-today">0</span></button>
+  <button class="ctx-tab" data-ctx="waiting" ondragover="tabOver(event)" ondragleave="tabLeave(event)" ondrop="tabDrop(event, 'waiting')">Чекаю <span class="badge" id="b-waiting">0</span></button>
+  <button class="ctx-tab" data-ctx="someday" ondragover="tabOver(event)" ondragleave="tabLeave(event)" ondrop="tabDrop(event, 'someday')">Колись <span class="badge" id="b-someday">0</span></button>
 </nav>
 
 <main class="app-body">
@@ -154,14 +137,12 @@ body {
 </div>
 
 <script>
-/* ── КОНФІГУРАЦІЯ ── */
 const SB_URL = "https://mlkdphygsdfcanztbtez.supabase.co"; 
 const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1sa2RwaHlnc2RmY2FuenRidGV6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYyODAwNTAsImV4cCI6MjA5MTg1NjA1MH0.PfjkZXua-9tp2lxVsBD3YBUNpx_USmMha5BQBZcGLFc";
 const sb = supabase.createClient(SB_URL, SB_KEY);
 
 let tasks = [];
 let activeCtx = 'inbox';
-let focusMode = false;
 let editId = null;
 
 /* ── АВТОРИЗАЦІЯ ── */
@@ -190,23 +171,21 @@ function updateBadges() {
   });
 }
 
-/* ── ФУНКЦІЇ СКАНЕРА ── */
-function toggleFocus() {
-  focusMode = !focusMode;
-  document.getElementById('focus-btn').classList.toggle('active', focusMode);
-  render();
+/* ── ТАБИ ЯК DROP-ЗОНИ ── */
+function tabOver(e) {
+  e.preventDefault();
+  e.currentTarget.classList.add('drag-over');
 }
-
-function toggleTheme() {
-  const d = document.documentElement;
-  d.dataset.theme = d.dataset.theme === 'dark' ? 'light' : 'dark';
+function tabLeave(e) {
+  e.currentTarget.classList.remove('drag-over');
 }
-
-function runRoulette() {
-  const options = tasks.filter(t => t.context === 'someday' && !t.done && (t.energy === 'low' || t.energy === 'medium'));
-  if (!options.length) return alert("Немає ідей у 'Колись' з низькою/середньою енергією.");
-  const pick = options[Math.floor(Math.random() * options.length)];
-  openMod(pick);
+async function tabDrop(e, targetCtx) {
+  e.preventDefault();
+  e.currentTarget.classList.remove('drag-over');
+  const id = e.dataTransfer.getData('text');
+  // При дропі на таб змінюємо лише контекст, енергія залишається поточною (або null)
+  await sb.from('scanner_tasks').update({ context: targetCtx }).eq('id', id);
+  sync();
 }
 
 /* ── РЕНДЕР ── */
@@ -215,25 +194,17 @@ function render() {
   board.innerHTML = '';
 
   if (activeCtx === 'inbox') {
-    // Вхідні: 1 колонка
     const list = tasks.filter(t => t.context === 'inbox' && !t.done);
-    board.appendChild(buildCol("Вхідні (Ідеї)", list, 'medium', 'var(--muted)'));
+    // Для інбоксу енергія за замовчуванням - null
+    board.appendChild(buildCol("Вхідні (Чисті)", list, null, 'var(--muted)'));
   } else {
-    // Інші: 3 колонки (Низька, Середня, Висока)
     const enCfg = [
       {id: 'low', lbl: 'Низька', color: 'var(--e-low)'},
       {id: 'medium', lbl: 'Середня', color: 'var(--e-med)'},
       {id: 'high', lbl: 'Висока', color: 'var(--e-high)'}
     ];
-
     enCfg.forEach(en => {
-      let list = tasks.filter(t => t.context === activeCtx && !t.done && (t.energy || 'medium') === en.id);
-      
-      // Режим Фокусу: в Today залишаємо тільки тип "task"
-      if (focusMode && activeCtx === 'today') {
-        list = list.filter(t => t.kind === 'task' || !t.kind);
-      }
-
+      const list = tasks.filter(t => t.context === activeCtx && !t.done && (t.energy === en.id));
       board.appendChild(buildCol(en.lbl, list, en.id, en.color));
     });
   }
@@ -242,14 +213,13 @@ function render() {
 function buildCol(title, list, energyTag, dotColor) {
   const col = document.createElement('div');
   col.className = 'col';
-  
-  // Drag & Drop
   col.ondragover = e => e.preventDefault();
   col.ondragenter = () => col.classList.add('drag-over');
   col.ondragleave = () => col.classList.remove('drag-over');
   col.ondrop = async e => {
     col.classList.remove('drag-over');
     const id = e.dataTransfer.getData('text');
+    // При дропі в колонку оновлюємо і контекст і енергію
     await sb.from('scanner_tasks').update({ context: activeCtx, energy: energyTag }).eq('id', id);
     sync();
   };
@@ -261,7 +231,7 @@ function buildCol(title, list, energyTag, dotColor) {
     </div>
     <div class="col-body"></div>
     <div class="col-footer">
-      <input class="quick-in" placeholder="+ Швидкий запис..." onkeydown="handleQuickAdd(event, '${energyTag}')">
+      <input class="quick-in" placeholder="+ Швидко..." onkeydown="handleQuickAdd(event, '${energyTag || ''}')">
     </div>
   `;
 
@@ -272,19 +242,13 @@ function buildCol(title, list, energyTag, dotColor) {
 
 function mkCard(t) {
   const el = document.createElement('div');
-  // Перевірка на "залежаність" (3 дні = 259200000 мс)
-  const isStale = t.context === 'inbox' && (Date.now() - new Date(t.created_at)) > 259200000;
-  
-  el.className = `tcard ${isStale ? 'is-stale' : ''}`;
-  el.dataset.e = t.energy || 'medium';
+  el.className = 'tcard';
+  if (t.energy) el.dataset.e = t.energy;
   el.draggable = true;
   el.ondragstart = e => e.dataTransfer.setData('text', t.id);
 
   el.innerHTML = `
-    <div class="tc-title">
-      ${t.title} 
-      ${isStale ? '<span class="stale-icon">🕸️</span>' : ''}
-    </div>
+    <div class="tc-title">${t.title}</div>
     <div class="tc-meta">
       <span>${t.kind || 'task'}</span>
       <span style="float:right; cursor:pointer" onclick="event.stopPropagation(); toggleDone('${t.id}')">◯</span>
@@ -294,14 +258,13 @@ function mkCard(t) {
   return el;
 }
 
-/* ── ДІЇ ── */
 async function handleQuickAdd(e, energy) {
   if (e.key !== 'Enter' || !e.target.value.trim()) return;
   const user = (await sb.auth.getUser()).data.user;
   await sb.from('scanner_tasks').insert([{
     title: e.target.value.trim(),
     context: activeCtx,
-    energy: energy,
+    energy: energy === '' ? null : energy, // Для інбоксу буде null
     user_id: user.id
   }]);
   e.target.value = '';
@@ -318,34 +281,28 @@ function openMod(t) {
   const body = document.getElementById('mbody');
   document.getElementById('modal').style.display = 'flex';
   body.innerHTML = `
-    <div style="font-family:'JetBrains Mono'; font-size:.6rem; text-transform:uppercase; margin-bottom:1rem; color:var(--muted)">Редагування</div>
-    <input id="m-ttl" class="inp" value="${t?.title || ''}" placeholder="Що зробити?">
-    <textarea id="m-note" class="inp" style="height:100px" placeholder="Нотатки...">${t?.note || ''}</textarea>
+    <input id="m-ttl" class="inp" value="${t?.title || ''}">
     <div style="display:flex; gap:10px; margin-bottom:1rem">
       <select id="m-ctx" class="inp">${['inbox', 'today', 'waiting', 'someday'].map(k => `<option value="${k}" ${t?.context === k ? 'selected' : ''}>${k.toUpperCase()}</option>`)}</select>
-      <select id="m-en" class="inp">${['low', 'medium', 'high'].map(e => `<option value="${e}" ${t?.energy === e ? 'selected' : ''}>ЕНЕРГІЯ: ${e.toUpperCase()}</option>`)}</select>
+      <select id="m-en" class="inp">
+        <option value="" ${!t?.energy ? 'selected' : ''}>БЕЗ ЕНЕРГІЇ</option>
+        <option value="low" ${t?.energy === 'low' ? 'selected' : ''}>LOW</option>
+        <option value="medium" ${t?.energy === 'medium' ? 'selected' : ''}>MED</option>
+        <option value="high" ${t?.energy === 'high' ? 'selected' : ''}>HIGH</option>
+      </select>
     </div>
-    <button class="pbtn" onclick="save()">Зберегти зміни</button>
-    ${t ? `<div onclick="delTask('${t.id}')" style="text-align:center; margin-top:1rem; font-size:.5rem; color:var(--e-high); cursor:pointer; text-transform:uppercase; font-family:'JetBrains Mono'">Видалити завдання</div>` : ''}
+    <button class="pbtn" onclick="save()">Зберегти</button>
   `;
 }
 
 async function save() {
   const d = {
     title: document.getElementById('m-ttl').value,
-    note: document.getElementById('m-note').value,
     context: document.getElementById('m-ctx').value,
-    energy: document.getElementById('m-en').value
+    energy: document.getElementById('m-en').value || null
   };
   await sb.from('scanner_tasks').update(d).eq('id', editId);
   closeMod(); sync();
-}
-
-async function delTask(id) {
-  if (confirm('Видалити це завдання?')) {
-    await sb.from('scanner_tasks').delete().eq('id', id);
-    closeMod(); sync();
-  }
 }
 
 function closeMod() { document.getElementById('modal').style.display = 'none'; }
@@ -359,9 +316,10 @@ document.getElementById('ctx-bar').onclick = e => {
   render();
 };
 
-document.addEventListener('DOMContentLoaded', () => {
-  document.documentElement.dataset.theme = 'light';
-});
+function toggleTheme() {
+  const d = document.documentElement;
+  d.dataset.theme = d.dataset.theme === 'dark' ? 'light' : 'dark';
+}
 </script>
 </body>
 </html>
