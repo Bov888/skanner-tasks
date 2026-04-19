@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>ScannerPlanner</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="https://cdn.jsdelivr.net/npm/drag-drop-touch@1.0.2/DragDropTouch.min.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Literata:ital,wght@0,300;0,400;0,500;1,300&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -21,64 +20,58 @@
   --accent: #6ab05f; --accent-light: #1e2e1c;
 }
 
-* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+* { margin: 0; padding: 0; box-sizing: border-box; }
 body {
   background: var(--bg); color: var(--text);
   font-family: 'Literata', serif; font-weight: 300;
-  height: 100dvh; overflow: hidden; display: flex; flex-direction: column;
+  height: 100vh; overflow: hidden; display: flex; flex-direction: column;
 }
 
 /* ── ТОРBAR & NAVIGATION ── */
 .topbar {
-  height: 56px; display: flex; align-items: center; padding: 0 1rem; gap: 0.5rem;
-  border-bottom: 1px solid var(--border); background: var(--bg); flex-shrink: 0;
+  height: 56px; display: flex; align-items: center; padding: 0 1.5rem; gap: 1rem;
+  border-bottom: 1px solid var(--border); background: var(--bg);
 }
 .logo { font-size: 1.1rem; flex: 1; cursor: pointer; font-weight: 400; }
 .logo span { color: var(--accent); font-style: italic; }
 
-.ctx-bar { display: flex; border-bottom: 1px solid var(--border); background: var(--bg); flex-shrink: 0; }
+.ctx-bar { display: flex; border-bottom: 1px solid var(--border); background: var(--bg); }
 .ctx-tab {
-  flex: 1; font-family: 'JetBrains Mono', monospace; font-size: .65rem; text-transform: uppercase;
-  color: var(--muted); background: none; cursor: pointer; padding: 1rem 0;
-  border: none; border-bottom: 2px solid transparent; transition: .2s; text-align: center;
+  font-family: 'JetBrains Mono', monospace; font-size: .65rem; text-transform: uppercase;
+  color: var(--muted); background: none; cursor: pointer; padding: 1rem 1.5rem;
+  border: none; border-bottom: 2px solid transparent; transition: .2s;
 }
-.ctx-tab.active { color: var(--accent); border-bottom-color: var(--accent); background: var(--surface); }
+.ctx-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
 .ctx-tab.drag-over { background: var(--accent-light); border-bottom-color: var(--accent); }
 
 .filter-bar { 
-  display: flex; gap: 0.5rem; padding: 0.5rem 1rem; background: var(--surface); 
-  border-bottom: 1px solid var(--border); align-items: center; overflow-x: auto; flex-shrink: 0;
+  display: flex; gap: 1rem; padding: 0.5rem 1.5rem; background: var(--surface); 
+  border-bottom: 1px solid var(--border); align-items: center;
 }
 
 /* ── BOARD ── */
-.app-body { flex: 1; display: flex; overflow: hidden; position: relative; }
-#board { 
-  display: flex; width: 100%; padding: 1rem; gap: 1rem; 
-  align-items: stretch; overflow-x: auto; overflow-y: hidden;
-}
+.app-body { flex: 1; display: flex; overflow: hidden; }
+#board { display: flex; width: 100%; padding: 1.2rem; gap: 1.2rem; align-items: stretch; }
 
-/* ФІКСОВАНИЙ РОЗМІР КОЛОНОК І КАРТОК (Тут ми прибрали адаптивність) */
 .col {
-  width: 320px; min-width: 320px; flex: none; /* Жодного розтягування */
-  background: var(--surface); border: 1px solid var(--border); border-radius: 4px;
+  flex: 1; min-width: 280px; background: var(--surface);
+  border: 1px solid var(--border); border-radius: 4px;
   display: flex; flex-direction: column; transition: background .2s;
-  max-height: 100%;
 }
 .col.drag-over { background: var(--surface2); border: 1px dashed var(--accent); }
-.col-head { padding: 0.8rem 1rem; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; }
+.col-head { padding: 0.8rem 1rem; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
 .col-title { font-family: 'JetBrains Mono', monospace; font-size: .65rem; text-transform: uppercase; display: flex; align-items: center; gap: .5rem; }
-.col-dot { width: 10px; height: 10px; border-radius: 2px; } /* Квадрат замість кола */
+.col-dot { width: 8px; height: 8px; border-radius: 50%; }
 .col-body { flex: 1; overflow-y: auto; padding: 0.8rem; }
-.col-footer { padding: 0.8rem; border-top: 1px solid var(--border); flex-shrink: 0; }
 
 /* ── CARDS ── */
 .tcard {
-  background: var(--bg); border: 1px solid var(--border); border-radius: 4px;
+  background: var(--bg); border: 1px solid var(--border); border-radius: 3px;
   padding: 1rem; margin-bottom: 0.8rem; cursor: grab; position: relative;
-  transition: opacity 0.3s; box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+  transition: opacity 0.3s;
 }
 .tcard:active { cursor: grabbing; }
-.tcard::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; display: none; border-radius: 4px 0 0 4px;}
+.tcard::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; display: none; }
 .tcard[data-e=low]::before { background: var(--e-low); display: block; }
 .tcard[data-e=medium]::before { background: var(--e-med); display: block; }
 .tcard[data-e=high]::before { background: var(--e-high); display: block; }
@@ -87,62 +80,34 @@ body {
 .stale-icon { float: right; font-size: 0.8rem; opacity: 0.6; }
 
 .tc-title { font-size: .95rem; line-height: 1.4; margin-bottom: .4rem; }
-.tc-meta { font-family: 'JetBrains Mono', monospace; font-size: .55rem; color: var(--muted); text-transform: uppercase; display: flex; justify-content: space-between; align-items: center; }
+.tc-meta { font-family: 'JetBrains Mono', monospace; font-size: .55rem; color: var(--muted); text-transform: uppercase; }
 
-/* КВАДРАТНА КНОПКА ВИКОНАННЯ ЗАМІСТЬ КОЛА */
-.sq-check {
-  width: 16px; height: 16px; border: 1.5px solid var(--muted);
-  border-radius: 3px; cursor: pointer; transition: 0.2s;
-}
-.sq-check:hover { border-color: var(--accent); background: var(--accent-light); }
-
-/* ── UI ELEMENTS & BUTTONS ── */
+/* ── UI ELEMENTS ── */
 .ctrl-btn {
   background: var(--bg); border: 1px solid var(--border); color: var(--muted);
   font-size: .6rem; font-family: 'JetBrains Mono', monospace; cursor: pointer;
-  padding: .5rem .7rem; border-radius: 4px; text-transform: uppercase; white-space: nowrap;
+  padding: .4rem .7rem; border-radius: 2px; text-transform: uppercase;
 }
 .ctrl-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
-.quick-in { width: 100%; padding: 0.7rem; border: 1px solid var(--border); font-family: 'Literata'; font-size: 0.85rem; background: var(--bg); border-radius: 4px; color: var(--text); }
+.quick-in { width: 100%; padding: 0.7rem; border: 1px solid var(--border); font-family: 'Literata'; font-size: 0.85rem; background: var(--bg); }
 
-/* ПЛАВАЮЧА КНОПКА ДОДАВАННЯ (КВАДРАТНА, ІДЕАЛЬНО ПО ЦЕНТРУ) */
-.fab {
-  position: fixed; bottom: 1.5rem; right: 1.5rem; width: 56px; height: 56px;
-  background: var(--accent); color: white; border-radius: 6px; /* Не кругла */
-  display: flex; align-items: center; justify-content: center; 
-  font-size: 2.2rem; font-weight: 300; line-height: 0; padding-bottom: 4px; /* Коригування оптичного центру плюса */
-  box-shadow: 0 4px 15px rgba(0,0,0,0.2); cursor: pointer; z-index: 500;
-}
-
-/* ── MODAL & SEGMENTS ── */
 #auth-gate, .modal {
   position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 1000;
-  display: none; align-items: center; justify-content: center; backdrop-filter: blur(2px); padding: 1rem;
+  display: none; align-items: center; justify-content: center; backdrop-filter: blur(2px);
 }
 #auth-gate { display: flex; background: var(--bg); }
-.mcard { background: var(--bg); padding: 1.5rem; width: 100%; max-width: 450px; border: 1px solid var(--border); border-radius: 6px; position: relative; }
-.inp { width: 100%; padding: 0.8rem; margin-bottom: 1rem; border: 1px solid var(--border); font-family: inherit; background: var(--surface2); color: var(--text); border-radius: 4px; font-size: 1rem; }
-.pbtn { width: 100%; padding: 1rem; background: var(--accent); color: #fff; border: none; font-family: 'JetBrains Mono'; cursor: pointer; text-transform: uppercase; border-radius: 4px; }
+.mcard { background: var(--bg); padding: 2rem; width: 90%; max-width: 400px; border: 1px solid var(--border); }
+.inp { width: 100%; padding: 0.8rem; margin-bottom: 1rem; border: 1px solid var(--border); font-family: 'Literata'; background: var(--surface); color: var(--text); }
+.pbtn { width: 100%; padding: 1rem; background: var(--accent); color: #fff; border: none; font-family: 'JetBrains Mono'; cursor: pointer; text-transform: uppercase; }
 
-.seg-group { display: flex; gap: 4px; margin-bottom: 1rem; flex-wrap: wrap; }
-.seg-btn {
-  flex: 1; min-width: 80px; padding: 0.8rem 0.2rem; border-radius: 4px; border: 1px solid var(--border);
-  background: var(--bg); color: var(--muted); font-family: 'JetBrains Mono';
-  font-size: 0.6rem; text-transform: uppercase; cursor: pointer; text-align: center;
-}
-.seg-btn.on { border-color: var(--accent); color: var(--accent); background: var(--accent-light); }
-.seg-btn[data-val="low"].on { border-color: var(--e-low); color: var(--e-low); background: rgba(107,143,113,0.1); }
-.seg-btn[data-val="medium"].on { border-color: var(--e-med); color: var(--e-med); background: rgba(176,125,58,0.1); }
-.seg-btn[data-val="high"].on { border-color: var(--e-high); color: var(--e-high); background: rgba(139,32,16,0.1); }
-.m-lbl { font-family: 'JetBrains Mono'; font-size: 0.55rem; color: var(--muted); margin-bottom: 0.4rem; }
-
+@media (max-width: 800px) { #board { flex-direction: column; overflow-y: auto; } .col { flex: none; } }
 </style>
 </head>
 <body>
 
 <div id="auth-gate">
   <div class="mcard">
-    <div class="logo" style="text-align:center; margin-bottom:2rem; font-size: 1.5rem;">Scanner<span>Planner</span></div>
+    <div class="logo" style="text-align:center; margin-bottom:2rem">Scanner<span>Planner</span></div>
     <input type="email" id="email" class="inp" placeholder="Email">
     <input type="password" id="pass" class="inp" placeholder="Password">
     <button class="pbtn" onclick="doLogin()">Увійти</button>
@@ -151,10 +116,11 @@ body {
 
 <header class="topbar">
   <div class="logo" onclick="location.reload()">Scanner<span>Planner</span></div>
-  <button class="ctrl-btn" onclick="runRoulette()">🎲 Рулетка</button>
-  <button class="ctrl-btn" id="focus-btn" onclick="toggleFocus()">🎯</button>
-  <button class="ctrl-btn" onclick="toggleTheme()">☾</button>
-  <button class="ctrl-btn" onclick="doLogout()">🚪</button>
+  <div style="display:flex; gap:0.5rem">
+    <button class="ctrl-btn" onclick="runRoulette()">🎲 Що зараз?</button>
+    <button class="ctrl-btn" id="focus-btn" onclick="toggleFocus()">🎯 Фокус</button>
+    <button class="ctrl-btn" onclick="toggleTheme()">☾</button>
+  </div>
 </header>
 
 <nav class="ctx-bar" id="ctx-bar">
@@ -165,40 +131,17 @@ body {
 </nav>
 
 <div class="filter-bar">
-  <span style="font-family:'JetBrains Mono'; font-size:0.55rem; color:var(--muted)">ФІЛЬТР:</span>
+  <span style="font-family:'JetBrains Mono'; font-size:0.55rem; color:var(--muted)">ЕНЕРГО-ФІЛЬТР:</span>
   <button class="ctrl-btn active" id="f-all" onclick="setFilter(null)">Всі</button>
   <button class="ctrl-btn" id="f-low" onclick="setFilter('low')" style="color:var(--e-low)">Low</button>
   <button class="ctrl-btn" id="f-med" onclick="setFilter('medium')" style="color:var(--e-med)">Med</button>
   <button class="ctrl-btn" id="f-high" onclick="setFilter('high')" style="color:var(--e-high)">High</button>
 </div>
 
-<main class="app-body">
-  <div id="board"></div>
-  <div class="fab" onclick="openMod(null)">+</div>
-</main>
+<main class="app-body"><div id="board"></div></main>
 
 <div id="modal" class="modal" onclick="if(event.target===this)closeMod()">
-  <div class="mcard">
-    <input id="m-ttl" class="inp" placeholder="Що треба зробити?">
-    <textarea id="m-note" class="inp" style="height:60px" placeholder="Нотатки..."></textarea>
-    
-    <div class="m-lbl">ТИП</div>
-    <div class="seg-group" id="seg-kind">
-      <div class="seg-btn on" data-val="task">Завдання</div>
-      <div class="seg-btn" data-val="project">Проєкт</div>
-      <div class="seg-btn" data-val="interest">Цікаве</div>
-    </div>
-
-    <div class="m-lbl">ЕНЕРГІЯ</div>
-    <div class="seg-group" id="seg-en">
-      <div class="seg-btn" data-val="low">🌿 Low</div>
-      <div class="seg-btn on" data-val="medium">⚡ Med</div>
-      <div class="seg-btn" data-val="high">🔥 High</div>
-    </div>
-
-    <button class="pbtn" onclick="save()">Зберегти</button>
-    <div id="del-btn" onclick="delTask()" style="text-align:center; color:var(--e-high); margin-top:1.5rem; font-size:0.6rem; cursor:pointer; display:none;">ВИДАЛИТИ ЗАВДАННЯ</div>
-  </div>
+  <div class="mcard" id="mbody"></div>
 </div>
 
 <script>
@@ -212,17 +155,10 @@ let energyFilter = null;
 let focusMode = false;
 let editId = null;
 
-let selKind = 'task';
-let selEn = 'medium';
-
 /* ── AUTH ── */
 async function doLogin() {
   const { error } = await sb.auth.signInWithPassword({ email: email.value, password: pass.value });
   if (error) alert(error.message);
-}
-async function doLogout() {
-  await sb.auth.signOut();
-  location.reload();
 }
 sb.auth.onAuthStateChange((ev, sess) => {
   document.getElementById('auth-gate').style.display = sess ? 'none' : 'flex';
@@ -249,7 +185,6 @@ function tLeave(e) { e.currentTarget.classList.remove('drag-over'); }
 async function tDrop(e, ctx) {
   e.preventDefault(); e.currentTarget.classList.remove('drag-over');
   const id = e.dataTransfer.getData('text');
-  if(!id) return;
   await sb.from('scanner_tasks').update({ context: ctx }).eq('id', id);
   sync();
 }
@@ -276,14 +211,14 @@ function runRoulette() {
 function render() {
   const board = document.getElementById('board');
   board.innerHTML = '';
-
+  
   let visible = tasks.filter(t => !t.done);
   if (energyFilter) visible = visible.filter(t => t.energy === energyFilter);
   if (focusMode && activeCtx === 'today') visible = visible.filter(t => t.kind === 'task');
 
   if (activeCtx === 'inbox') {
     const list = visible.filter(t => t.context === 'inbox');
-    board.appendChild(buildCol("Вхідні", list, null, 'var(--muted)'));
+    board.appendChild(buildCol("Вхідні (Чисті)", list, null, 'var(--muted)'));
   } else {
     const enCfg = [
       {id:'low', lbl:'Низька', color:'var(--e-low)'},
@@ -305,30 +240,23 @@ function buildCol(title, list, energy, color) {
   col.ondragover = e => e.preventDefault();
   col.ondrop = async e => {
     const id = e.dataTransfer.getData('text');
-    if(!id) return;
     await sb.from('scanner_tasks').update({ context: activeCtx, energy: energy }).eq('id', id);
     sync();
   };
 
   col.innerHTML = `
     <div class="col-head">
-      <div class="col-title"><div class="col-dot" style="background:${color}"></div>${title}</div>
+      <div class="col-title"><span class="col-dot" style="background:${color}"></span>${title}</div>
       <div class="badge">${list.length}</div>
     </div>
     <div class="col-body"></div>
     <div class="col-footer">
-      <input class="quick-in" placeholder="+ Швидко (Enter)..." onkeydown="handleQuickAdd(event, '${energy||''}')">
+      <input class="quick-in" placeholder="+ Швидко..." onkeydown="handleQuickAdd(event, '${energy||''}')">
     </div>
   `;
   const body = col.querySelector('.col-body');
   list.forEach(t => body.appendChild(mkCard(t)));
   return col;
-}
-
-function getKindIcon(k) {
-  if (k === 'project') return 'Проєкт';
-  if (k === 'interest') return 'Цікаве';
-  return 'Завдання';
 }
 
 function mkCard(t) {
@@ -344,16 +272,18 @@ function mkCard(t) {
   el.onclick = () => openMod(t);
 
   el.innerHTML = `
-    <div class="tc-title">${t.title} ${isStale ? '<span class="stale-icon">🕸️</span>' : ''}</div>
+    <div class="tc-title">
+      ${t.title} ${isStale ? '<span class="stale-icon">🕸️</span>' : ''}
+    </div>
     <div class="tc-meta">
-      <span>${getKindIcon(t.kind)}</span>
-      <div class="sq-check" onclick="event.stopPropagation(); toggleDone('${t.id}')"></div>
+      <span>${t.kind || 'task'}</span>
+      <span style="float:right; cursor:pointer" onclick="event.stopPropagation(); toggleDone('${t.id}')">◯</span>
     </div>
   `;
   return el;
 }
 
-/* ── ACTIONS & MODAL ── */
+/* ── ACTIONS ── */
 async function handleQuickAdd(e, en) {
   if (e.key !== 'Enter' || !e.target.value.trim()) return;
   const user = (await sb.auth.getUser()).data.user;
@@ -361,7 +291,6 @@ async function handleQuickAdd(e, en) {
     title: e.target.value.trim(),
     context: activeCtx,
     energy: en === '' ? null : en,
-    kind: 'task',
     user_id: user.id
   }]);
   e.target.value = '';
@@ -373,47 +302,39 @@ async function toggleDone(id) {
   sync();
 }
 
-function updateModalUI() {
-  document.querySelectorAll('#seg-kind .seg-btn').forEach(b => b.classList.toggle('on', b.dataset.val === selKind));
-  document.querySelectorAll('#seg-en .seg-btn').forEach(b => b.classList.toggle('on', b.dataset.val === selEn));
-}
-
-document.getElementById('seg-kind').onclick = e => { if(e.target.dataset.val) { selKind = e.target.dataset.val; updateModalUI(); } };
-document.getElementById('seg-en').onclick = e => { if(e.target.dataset.val) { selEn = e.target.dataset.val; updateModalUI(); } };
-
 function openMod(t) {
-  editId = t ? t.id : null;
+  editId = t.id;
   document.getElementById('modal').style.display = 'flex';
-  document.getElementById('m-ttl').value = t ? t.title : '';
-  document.getElementById('m-note').value = t ? (t.note||'') : '';
-  
-  selKind = t ? (t.kind||'task') : 'task';
-  selEn = t ? (t.energy||'medium') : 'medium';
-  updateModalUI();
-
-  document.getElementById('del-btn').style.display = t ? 'block' : 'none';
+  document.getElementById('mbody').innerHTML = `
+    <input id="m-ttl" class="inp" value="${t.title}">
+    <textarea id="m-note" class="inp" style="height:80px" placeholder="Нотатки...">${t.note||''}</textarea>
+    <div style="display:flex; gap:10px; margin-bottom:1rem">
+      <select id="m-ctx" class="inp">${['inbox','today','waiting','someday'].map(k => `<option value="${k}" ${t.context===k?'selected':''}>${k.toUpperCase()}</option>`)}</select>
+      <select id="m-en" class="inp">
+        <option value="">БЕЗ ЕНЕРГІЇ</option>
+        <option value="low" ${t.energy==='low'?'selected':''}>LOW</option>
+        <option value="medium" ${t.energy==='medium'?'selected':''}>MED</option>
+        <option value="high" ${t.energy==='high'?'selected':''}>HIGH</option>
+      </select>
+    </div>
+    <button class="pbtn" onclick="save()">Зберегти</button>
+    <div onclick="delTask('${t.id}')" style="text-align:center; color:var(--e-high); margin-top:1rem; font-size:0.6rem; cursor:pointer">ВИДАЛИТИ</div>
+  `;
 }
 
 async function save() {
-  const title = document.getElementById('m-ttl').value.trim();
-  if(!title) return;
-  const user = (await sb.auth.getUser()).data.user;
   const d = {
-    title,
-    note: document.getElementById('m-note').value.trim() || null,
-    kind: selKind,
-    energy: selEn || null,
-    context: editId ? undefined : activeCtx, // Нова задача зберігається в поточний контекст
-    user_id: user.id
+    title: document.getElementById('m-ttl').value,
+    note: document.getElementById('m-note').value,
+    context: document.getElementById('m-ctx').value,
+    energy: document.getElementById('m-en').value || null
   };
-  if(editId) await sb.from('scanner_tasks').update(d).eq('id', editId);
-  else await sb.from('scanner_tasks').insert([d]);
-  
+  await sb.from('scanner_tasks').update(d).eq('id', editId);
   closeMod(); sync();
 }
 
-async function delTask() {
-  if(confirm('Видалити назавжди?')) { await sb.from('scanner_tasks').delete().eq('id', editId); closeMod(); sync(); }
+async function delTask(id) {
+  if(confirm('Видалити?')) { await sb.from('scanner_tasks').delete().eq('id', id); closeMod(); sync(); }
 }
 
 function closeMod() { document.getElementById('modal').style.display = 'none'; }
