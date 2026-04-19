@@ -3,31 +3,40 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ScannerPlanner v4</title>
+<title>ScannerPlanner PRO</title>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <style>
-body { font-family: sans-serif; margin:0; background:#111; color:#eee; }
-.topbar { padding:10px; background:#1a1a1a; display:flex; gap:10px; }
-button { cursor:pointer; }
-#board { display:flex; gap:10px; padding:10px; }
-.col { flex:1; background:#1e1e1e; padding:10px; }
-.tcard { background:#2a2a2a; margin-bottom:8px; padding:10px; cursor:pointer; }
+:root {
+  --bg:#111; --card:#1e1e1e; --border:#2a2a2a;
+  --text:#eee; --accent:#6ab05f;
+}
+body {margin:0;background:var(--bg);color:var(--text);font-family:sans-serif;}
+.topbar{padding:10px;background:#1a1a1a;display:flex;gap:10px;}
+button{cursor:pointer;}
+#board{display:flex;gap:10px;padding:10px;height:calc(100vh - 60px);}
+.col{flex:1;background:var(--card);padding:10px;display:flex;flex-direction:column;}
+.col-body{flex:1;overflow:auto;}
+.tcard{background:#2a2a2a;margin-bottom:8px;padding:10px;cursor:pointer;border-left:4px solid gray;}
+.tcard[data-e=low]{border-color:#6b8f71;}
+.tcard[data-e=medium]{border-color:#c9903e;}
+.tcard[data-e=high]{border-color:#e05040;}
 </style>
 </head>
 
 <body>
 
-<div id="auth-gate">
-  <input id="email" placeholder="email">
-  <input id="pass" type="password">
-  <button onclick="doLogin()">login</button>
+<div id="auth">
+<input id="email" placeholder="email">
+<input id="pass" type="password">
+<button onclick="login()">login</button>
 </div>
 
 <div class="topbar">
-  <button onclick="runRoulette()">🎲</button>
-  <button onclick="toggleFocus()">🎯</button>
+<button onclick="runRoulette()">🎲</button>
+<button onclick="toggleFocus()">🎯</button>
+<button onclick="newTask()">➕</button>
 </div>
 
 <div id="board"></div>
@@ -40,145 +49,204 @@ const sb = supabase.createClient(
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1sa2RwaHlnc2RmY2FuenRidGV6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYyODAwNTAsImV4cCI6MjA5MTg1NjA1MH0.PfjkZXua-9tp2lxVsBD3YBUNpx_USmMha5BQBZcGLFc"
 );
 
-let tasks = [];
-let activeCtx = "today";
-let focusMode = false;
+let tasks=[];
+let ctx="today";
+let focus=false;
 
 /* AUTH */
-async function doLogin() {
-  await sb.auth.signInWithPassword({
-    email: email.value,
-    password: pass.value
-  });
+async function login(){
+ await sb.auth.signInWithPassword({
+  email:email.value,
+  password:pass.value
+ });
 }
 
-sb.auth.onAuthStateChange((e, s) => {
-  if (s) {
-    document.getElementById("auth-gate").style.display = "none";
-    sync();
-  }
+sb.auth.onAuthStateChange((e,s)=>{
+ if(s){
+  document.getElementById("auth").style.display="none";
+  sync();
+ }
 });
 
 /* SMART SCORE */
-function scoreTask(t){
-  let s=0;
-  if(t.context==="today") s+=50;
-  if(t.energy==="high") s+=20;
-  if(t.energy==="medium") s+=10;
+function score(t){
+ let s=0;
+ if(t.context==="today") s+=50;
+ if(t.energy==="high") s+=20;
+ if(t.energy==="medium") s+=10;
 
-  const age=(Date.now()-new Date(t.created_at))/(86400000);
-  s+=Math.max(0,30-age);
+ const age=(Date.now()-new Date(t.created_at))/86400000;
+ s+=Math.max(0,30-age);
 
-  return s;
+ return s;
 }
 
 /* SORT */
-function smartSort(list){
-  return list.sort((a,b)=>scoreTask(b)-scoreTask(a));
-}
-
-/* CLEANUP */
-async function autoCleanup(){
-  const stale=tasks.filter(t=>
-    t.context==="inbox" &&
-    Date.now()-new Date(t.created_at)>259200000
-  );
-
-  for(let t of stale){
-    await sb.from("scanner_tasks")
-      .update({context:"someday"})
-      .eq("id",t.id);
-  }
-
-  if(stale.length) sync();
+function smart(list){
+ return list.sort((a,b)=>score(b)-score(a));
 }
 
 /* CACHE */
-function saveLocal(){
-  localStorage.setItem("cache",JSON.stringify(tasks));
+function save(){localStorage.setItem("tasks",JSON.stringify(tasks))}
+function load(){
+ let d=localStorage.getItem("tasks");
+ if(d) tasks=JSON.parse(d);
 }
-function loadLocal(){
-  const d=localStorage.getItem("cache");
-  if(d) tasks=JSON.parse(d);
+
+/* CLEAN */
+async function cleanup(){
+ let stale=tasks.filter(t=>
+  t.context==="inbox" &&
+  Date.now()-new Date(t.created_at)>259200000
+ );
+
+ for(let t of stale){
+  await sb.from("scanner_tasks")
+   .update({context:"someday"})
+   .eq("id",t.id);
+ }
+
+ if(stale.length) sync();
 }
 
 /* SYNC */
 async function sync(){
-  try{
-    const {data}=await sb.from("scanner_tasks").select("*");
-    tasks=data||[];
-    saveLocal();
-  }catch{
-    loadLocal();
-  }
+ try{
+  let {data}=await sb.from("scanner_tasks")
+   .select("*")
+   .order("created_at",{ascending:false});
+  tasks=data||[];
+  save();
+ }catch{
+  load();
+ }
 
-  render();
-  autoCleanup();
+ render();
+ cleanup();
 }
 
 /* RENDER */
 function render(){
-  const board=document.getElementById("board");
-  board.innerHTML="";
+ let board=document.getElementById("board");
+ board.innerHTML="";
 
-  let list=tasks.filter(t=>t.context===activeCtx && !t.done);
+ ["low","medium","high"].forEach(en=>{
+  let col=document.createElement("div");
+  col.className="col";
 
-  if(focusMode){
-    list=smartSort(list).slice(0,1);
+  let body=document.createElement("div");
+  body.className="col-body";
+
+  let list=tasks.filter(t=>
+   t.context===ctx &&
+   !t.done &&
+   (t.energy||"medium")===en
+  );
+
+  if(focus){
+   list=smart(list).slice(0,1);
   }
 
-  smartSort(list).forEach(t=>{
-    const el=document.createElement("div");
-    el.className="tcard";
-    el.innerText=t.title;
-    el.onclick=()=>toggleDone(t.id);
-    board.appendChild(el);
+  smart(list).forEach(t=>{
+   let el=document.createElement("div");
+   el.className="tcard";
+   el.dataset.e=t.energy||"medium";
+   el.innerText=t.title;
+
+   el.draggable=true;
+   el.ondragstart=e=>e.dataTransfer.setData("id",t.id);
+
+   el.onclick=()=>edit(t);
+
+   body.appendChild(el);
   });
+
+  col.ondragover=e=>e.preventDefault();
+  col.ondrop=async e=>{
+   let id=e.dataTransfer.getData("id");
+   await sb.from("scanner_tasks")
+    .update({energy:en})
+    .eq("id",id);
+   sync();
+  };
+
+  col.appendChild(body);
+  board.appendChild(col);
+ });
 }
 
-/* ACTIONS */
-async function toggleDone(id){
-  await sb.from("scanner_tasks")
-    .update({done:true})
-    .eq("id",id);
+/* CRUD */
+async function newTask(){
+ let title=prompt("Задача?");
+ if(!title) return;
 
-  sync();
+ let user=(await sb.auth.getUser()).data.user;
+
+ await sb.from("scanner_tasks").insert([{
+  title,
+  context:"inbox",
+  energy:"medium",
+  user_id:user.id
+ }]);
+
+ sync();
+}
+
+function edit(t){
+ let title=prompt("Редагувати:",t.title);
+ if(!title) return;
+
+ sb.from("scanner_tasks")
+  .update({title})
+  .eq("id",t.id);
+
+ sync();
+}
+
+/* DONE */
+async function done(id){
+ await sb.from("scanner_tasks")
+  .update({done:true})
+  .eq("id",id);
+
+ sync();
 }
 
 /* FOCUS */
 function toggleFocus(){
-  focusMode=!focusMode;
+ focus=!focus;
 
-  if(focusMode){
-    const list=tasks.filter(t=>t.context==="today" && !t.done);
-    const best=smartSort(list)[0];
-    if(best) alert("Фокус: "+best.title);
-  }
+ if(focus){
+  let list=tasks.filter(t=>t.context==="today"&&!t.done);
+  let best=smart(list)[0];
+  if(best) alert("Фокус: "+best.title);
+ }
 
-  render();
+ render();
 }
 
 /* ROULETTE */
 function runRoulette(){
-  const list=tasks.filter(t=>!t.done);
-  if(!list.length) return;
+ let list=tasks.filter(t=>!t.done);
+ if(!list.length) return;
 
-  const pick=smartSort(list).slice(0,5);
-  const r=pick[Math.floor(Math.random()*pick.length)];
+ let pick=smart(list).slice(0,5);
+ let r=pick[Math.floor(Math.random()*pick.length)];
 
-  alert("Спробуй: "+r.title);
+ alert("Спробуй: "+r.title);
 }
 
 /* HOTKEYS */
-document.addEventListener("keydown",(e)=>{
-  if(e.key==="f") toggleFocus();
-  if(e.key==="r") runRoulette();
+document.addEventListener("keydown",e=>{
+ if(e.target.tagName==="INPUT") return;
+
+ if(e.key==="f") toggleFocus();
+ if(e.key==="r") runRoulette();
+ if(e.key==="n") newTask();
 });
 
 /* INIT */
-document.addEventListener("DOMContentLoaded",()=>{
-  sync();
-});
+document.addEventListener("DOMContentLoaded",sync);
 
 </script>
 </body>
