@@ -45,7 +45,7 @@
 }
 
 *{margin:0;padding:0;box-sizing:border-box;border:none;outline:none;}
-html{font-size:17px;} /* трохи більше для читабельності */
+html{font-size:17px;} 
 body{
   background:var(--bg);color:var(--text);
   font-family:'Literata',Georgia,serif;font-weight:300;
@@ -57,7 +57,7 @@ body{
 #auth-gate{position:fixed;inset:0;background:var(--bg);z-index:9000;
   display:none;align-items:center;justify-content:center;padding:1.5rem;}
 .auth-card{background:var(--surface);padding:2.5rem;border-radius:3px;
-  border:1px solid var(--border);width:100%;max-width:380px;}
+border:1px solid var(--border);width:100%;max-width:380px;}
 .auth-logo{font-family:'Literata',serif;font-size:1.5rem;font-weight:300;
   letter-spacing:-.02em;margin-bottom:2rem;text-align:center;}
 .auth-logo span{color:var(--accent);font-style:italic;}
@@ -103,6 +103,17 @@ body{
 }
 .hbtn:hover{border-color:var(--accent);color:var(--accent);}
 .hbtn.on{background:var(--accent-light);border-color:var(--accent);color:var(--accent);}
+
+@media(max-width: 480px) {
+  #focus-btn {
+    font-size: 0; 
+    padding: .4rem; 
+  }
+  #focus-btn::before {
+    content: '🎯';
+    font-size: .8rem;
+  }
+}
 
 /* ── OVERLAY ── */
 #overlay{
@@ -228,8 +239,6 @@ body{
 .ctx-tab:hover{color:var(--accent);}
 .ctx-tab.active{color:var(--accent);border-bottom-color:var(--accent);}
 .ctx-tab.dov{background:var(--accent-light);border-bottom-color:var(--accent);}
-.ctx-tab[data-ctx=museum]{color:var(--e-med);}
-.ctx-tab[data-ctx=museum].active{border-bottom-color:var(--e-med);}
 .badge{
   display:inline-flex;align-items:center;justify-content:center;
   min-width:16px;height:16px;padding:0 3px;
@@ -237,7 +246,6 @@ body{
   font-size:.5rem;border:1px solid var(--border);
 }
 .ctx-tab.active .badge{background:var(--accent-light);color:var(--accent);border-color:var(--accent);}
-.ctx-tab[data-ctx=museum].active .badge{background:#fdf3e7;color:var(--e-med);}
 
 /* ── MAIN AREA ── */
 #main-area{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0;}
@@ -245,14 +253,14 @@ body{
 /* ── BOARD ── */
 #board{
   flex:1;display:flex;padding:1.2rem;gap:1rem;
-  overflow-x:auto;overflow-y:hidden;align-items:flex-start;
+  overflow-x:auto;overflow-y:hidden;align-items:stretch; /* Виправлено для розтягування */
   scrollbar-width:thin;scrollbar-color:var(--border) transparent;
 }
 @media(max-width:700px){
   #board{flex-direction:column;overflow-x:hidden;overflow-y:auto;padding:.9rem;gap:.8rem;}
 }
 
-/* ── COLUMN ── повна ширина ── */
+/* ── COLUMN ── */
 .col{
   flex:1;min-width:260px;
   background:var(--surface);border:1px solid var(--border);border-radius:3px;
@@ -302,7 +310,7 @@ body{
   background:var(--bg);border:1px solid var(--border);border-radius:3px;
   padding:.7rem .85rem .7rem .95rem;margin-bottom:.35rem;
   cursor:pointer;position:relative;
-  transition:border-color .15s,transform .1s;
+  transition:border-color .15s,transform .1s, opacity .2s, filter .2s;
   touch-action:none;user-select:none;
 }
 .tcard:hover{border-color:var(--accent-mid);transform:translateY(-1px);}
@@ -358,6 +366,17 @@ body{
 }
 .tc-ctx-btn:hover{border-color:var(--accent);color:var(--accent);}
 .tc-timer-btn{color:var(--accent);border-color:var(--accent);}
+
+/* Focus mode (оновлено) */
+body.focus-mode .tcard:not(.focus-match){
+  opacity:0.15;
+  pointer-events:none;
+  filter:blur(1px) grayscale(100%);
+}
+body.focus-mode .done-row,
+body.focus-mode .done-section {
+  display:none; /* Ховаємо завершені у фокусі */
+}
 
 /* ── МУЗЕЙ ── */
 #museum-view{flex:1;overflow-y:auto;padding:1.5rem;display:none;}
@@ -449,19 +468,43 @@ body{
 .timer-btn:hover{border-color:var(--accent);color:var(--accent);}
 .timer-btn.primary:hover{opacity:.85;}
 
-/* ── FAB ── */
-#fab{
-  position:fixed;bottom:1.5rem;right:1.5rem;
-  width:54px;height:54px;border-radius:50%;
-  background:var(--accent);color:#fff;border:none;cursor:pointer;
-  z-index:500;display:flex;align-items:center;justify-content:center;
-  box-shadow:0 4px 18px rgba(0,0,0,.28);
-  transition:transform .15s,box-shadow .15s;
-  touch-action:manipulation;font-size:1.5rem;line-height:1;
+/* ── FAB (Нова задача - оновлено) ── */
+#fab {
+  position: fixed;
+  bottom: 1.5rem;
+  right: 1.5rem;
+  padding: .75rem 1.4rem;
+  border-radius: 3px;
+  background: var(--bg);
+  color: var(--accent);
+  border: 1px solid var(--accent);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: .65rem;
+  font-weight: 500;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  z-index: 500;
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  box-shadow: 0 4px 18px rgba(0,0,0,.12);
+  transition: all .15s;
+  touch-action: manipulation;
 }
-#fab:hover{transform:scale(1.07);box-shadow:0 6px 22px rgba(0,0,0,.32);}
-#fab:active{transform:scale(.96);}
-@media(min-width:900px){#fab{display:none;}}
+#fab::before {
+  content: '＋';
+  font-size: 1.1rem;
+  line-height: 1;
+}
+#fab:hover {
+  background: var(--accent-light);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 22px rgba(0,0,0,.18);
+}
+#fab:active {
+  transform: translateY(0);
+}
 
 /* ── MODAL ── */
 .modal{
@@ -553,11 +596,6 @@ select.inp{
   box-shadow:0 6px 20px rgba(0,0,0,.3);
   max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
 }
-
-/* Focus mode */
-body.focus-mode .tcard:not(.focus-match){
-  opacity:.18;pointer-events:none;filter:grayscale(50%);
-}
 </style>
 </head>
 <body data-sc>
@@ -576,7 +614,6 @@ body.focus-mode .tcard:not(.focus-match){
 
 <div id="overlay"></div>
 
-<!-- POMODORO TIMER -->
 <div id="timer-overlay">
   <div class="timer-card">
     <div class="timer-label">🍅 Pomodoro</div>
@@ -598,11 +635,10 @@ body.focus-mode .tcard:not(.focus-match){
   </div>
 </div>
 
-<!-- TOPBAR -->
 <header class="topbar">
   <button class="ibtn" id="menu-btn" aria-label="Фільтри">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-      <path d="M4 6h16M4 12h10M4 18h6"/>
+      <path d="M3 12h18M3 6h18M3 18h18"/>
     </svg>
   </button>
   <button class="logo-btn" onclick="location.reload()">
@@ -631,9 +667,6 @@ body.focus-mode .tcard:not(.focus-match){
   </button>
   <button class="hbtn" id="focus-btn" onclick="toggleFocus()" title="Фокус-режим: тільки завдання поточного контексту">🎯 Фокус</button>
   <button class="theme-btn" id="theme-btn" onclick="toggleTheme()">☾ тема</button>
-  <button class="ibtn" id="btn-add" title="Нова задача">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
-  </button>
   <button class="ibtn danger" id="btn-logout" title="Вийти">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
       <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/>
@@ -641,17 +674,14 @@ body.focus-mode .tcard:not(.focus-match){
   </button>
 </header>
 
-<!-- CONTEXT TABS -->
 <nav class="ctx-bar" id="ctx-bar">
   <button class="ctx-tab active" data-ctx="inbox">Вхідні<span class="badge" id="b-inbox">0</span></button>
   <button class="ctx-tab" data-ctx="today">Сьогодні<span class="badge" id="b-today">0</span></button>
   <button class="ctx-tab" data-ctx="waiting">Чекаю<span class="badge" id="b-waiting">0</span></button>
   <button class="ctx-tab" data-ctx="someday">Колись<span class="badge" id="b-someday">0</span></button>
-  <button class="ctx-tab" data-ctx="museum" style="margin-left:auto;">🏛 Музей<span class="badge" id="b-museum" style="background:#fdf3e7;color:var(--e-med)">0</span></button>
 </nav>
 
 <div class="app-body">
-  <!-- SIDEBAR — фільтри і дії -->
   <aside id="sidebar">
     <div class="sb-header">
       <span class="sb-title">Фільтри і дії</span>
@@ -691,8 +721,7 @@ body.focus-mode .tcard:not(.focus-match){
         <button class="sb-chip on" data-p="all" onclick="setPFilter('all')">
           <span class="chip-ct">Всі проєкти</span>
         </button>
-        <!-- проєкти генеруються динамічно -->
-      </div>
+        </div>
       <button class="sb-new-proj" onclick="promptNewProject()">+ Новий проєкт</button>
     </div>
 
@@ -719,8 +748,7 @@ body.focus-mode .tcard:not(.focus-match){
   </div>
 </div>
 
-<!-- FAB -->
-<button id="fab" onclick="openMod(null)" title="Нова задача">＋</button>
+<button id="fab" onclick="openMod(null)" title="Нова задача">Нова задача</button>
 
 <div id="modal" class="modal" onclick="if(event.target===this)closeMod()">
   <div class="mcard" id="mbody"></div>
@@ -737,7 +765,6 @@ let energyFilter='all';
 let projectFilter='all';
 let focusMode=false;
 let editId=null;
-
 const CTXS={
   inbox:  {lbl:'Вхідні',   dot:'var(--muted)'},
   today:  {lbl:'Сьогодні', dot:'var(--accent)'},
@@ -801,8 +828,6 @@ function updateBadges(){
     const el=document.getElementById('b-'+k);
     if(el)el.textContent=c;
   });
-  const bm=document.getElementById('b-museum');
-  if(bm)bm.textContent=tasks.filter(t=>t.done).length;
 }
 
 /* ── SIDEBAR ── */
@@ -841,6 +866,7 @@ function renderProjectChips(){
   allBtn.dataset.p='all';allBtn.onclick=()=>setPFilter('all');
   allBtn.innerHTML=`<span class="chip-ct">Всі проєкти</span><span class="chip-n">${tasks.filter(t=>!t.done).length}</span>`;
   container.appendChild(allBtn);
+
   projs.forEach(p=>{
     const cnt=tasks.filter(t=>t.project===p&&!t.done).length;
     const b=document.createElement('button');
@@ -863,7 +889,7 @@ function setPFilter(val){
 async function promptNewProject(){
   const name=prompt('Назва нового проєкту:');
   if(!name?.trim())return;
-  /* Проєкт створюється через першу задачу з цим проєктом */
+
   const user=(await sb.auth.getUser()).data.user;
   await sb.from('scanner_tasks').insert([{
     title:'Перша задача проєкту '+name.trim(),
@@ -893,6 +919,7 @@ document.getElementById('ctx-bar').addEventListener('click',e=>{
   if(!tab)return;
   switchCtx(tab.dataset.ctx);
 });
+
 /* Desktop drop на таби */
 document.querySelectorAll('.ctx-tab[data-ctx]').forEach(tab=>{
   if(tab.dataset.ctx==='museum')return;
@@ -904,9 +931,6 @@ document.querySelectorAll('.ctx-tab[data-ctx]').forEach(tab=>{
     if(id){await sb.from('scanner_tasks').update({context:tab.dataset.ctx}).eq('id',id);sync();}
   });
 });
-
-/* ── ADD ── */
-document.getElementById('btn-add').addEventListener('click',()=>openMod(null));
 
 /* ── FOCUS ── */
 function toggleFocus(){
@@ -925,8 +949,6 @@ function runRoulette(){
 
 /* ═══════════════════════════════════════════════
    POMODORO TIMER
-   Налаштовуваний таймер. Підтримує Notification API
-   щоб працювати у фоні (якщо дозвіл є).
 ═══════════════════════════════════════════════ */
 let timerInterval=null;
 let timerTotal=25*60;
@@ -972,7 +994,6 @@ function timerToggle(){
         clearInterval(timerInterval);timerRunning=false;
         document.getElementById('timer-start-btn').textContent='✓ Час!';
         if(navigator.vibrate)navigator.vibrate([300,100,300,100,300]);
-        /* Notification API для фону */
         if(Notification.permission==='granted'){
           new Notification('ScannerTasks 🍅',{
             body:'Час вийшов! '+document.getElementById('timer-task-ttl').textContent,
@@ -1009,15 +1030,12 @@ function startTimer(task=null){
   document.getElementById('timer-start-btn').textContent='▶ Старт';
   updateTimerDisplay();
   document.getElementById('timer-overlay').style.display='flex';
-  /* Запит дозволу на сповіщення */
   if(Notification.permission==='default')Notification.requestPermission();
 }
 
-/* ══ DRAG & DROP ══
-   Desktop: HTML5 drag.
-   Mobile: Pointer Events + hold 400ms.
-*/
+/* ══ DRAG & DROP ══ */
 let D={on:false,drag:false,id:null,ghost:null,tgt:null,x0:0,y0:0,lbl:'',ht:null};
+
 function mkDrag(el,taskId,label){
   el.draggable=true;
   el.ondragstart=e=>e.dataTransfer.setData('tid',taskId);
@@ -1104,10 +1122,12 @@ function render(){
     });
   }
 
-  /* Focus mode */
+  /* Focus mode (оновлено) */
   if(focusMode){
     document.querySelectorAll('.tcard').forEach(c=>{
-      c.classList.toggle('focus-match',c.dataset.kind==='task');
+      const isDone = c.classList.contains('done-card');
+      const isTask = c.dataset.kind==='task';
+      c.classList.toggle('focus-match', isTask && !isDone);
     });
   }
 }
@@ -1124,11 +1144,13 @@ function buildCol(title,color,energy,list,doneList){
     if(energy!==null)upd.energy=energy||'medium';
     await sb.from('scanner_tasks').update(upd).eq('id',id);sync();
   });
+
   const head=document.createElement('div');head.className='col-head';
   head.innerHTML=`<div class="col-title"><span class="col-dot" style="background:${color}"></span>${title}</div>
     <span class="col-count">${list.length}</span>`;
   col.appendChild(head);
   const body=document.createElement('div');body.className='col-body';
+
   if(!list.length){
     body.innerHTML=`<div class="empty"><span style="font-size:1.5rem;opacity:.2">✓</span><span class="empty-lbl">Порожньо</span></div>`;
   } else {
@@ -1136,6 +1158,7 @@ function buildCol(title,color,energy,list,doneList){
   }
   col.appendChild(body);
   const footer=document.createElement('div');footer.className='col-footer';
+
   const qi=document.createElement('input');
   qi.className='quick-inp';qi.placeholder='+ Швидко (Enter)...';
   qi.addEventListener('keydown',async ev=>{
@@ -1148,6 +1171,7 @@ function buildCol(title,color,energy,list,doneList){
     }]);
     qi.value='';sync();
   });
+
   footer.appendChild(qi);col.appendChild(footer);
   if(doneList.length){
     const dr=document.createElement('div');dr.className='done-row';
@@ -1170,6 +1194,7 @@ function mkCard(t,isDone=false){
   const row=document.createElement('div');row.className='tc-row';
   const cb=document.createElement('div');cb.className='tc-cb';
   if(t.done)cb.textContent='✓';
+
   cb.addEventListener('click',e=>{e.stopPropagation();toggleDone(t);});
   const ttl=document.createElement('div');ttl.className='tc-title';
   ttl.textContent=t.title+(isStale?' 🕸️':'');
@@ -1178,6 +1203,7 @@ function mkCard(t,isDone=false){
   meta.innerHTML=`<span>${kIcon(t.kind||'task')} ${KINDS.find(k=>k.id===t.kind)?.lbl||'Задача'}</span>`;
   if(t.project){const pb=document.createElement('span');pb.className='tc-proj';pb.textContent=t.project;meta.appendChild(pb);}
   el.appendChild(meta);
+
   if(t.note){const ns=document.createElement('div');ns.className='tc-note';ns.textContent=t.note;el.appendChild(ns);}
   if(!t.done){
     const ctxBtns=document.createElement('div');ctxBtns.className='tc-ctx-btns';
@@ -1187,6 +1213,7 @@ function mkCard(t,isDone=false){
       b.addEventListener('click',ev=>{ev.stopPropagation();moveCtx(t,k);});
       ctxBtns.appendChild(b);
     });
+
     const tb=document.createElement('button');
     tb.className='tc-ctx-btn tc-timer-btn';tb.textContent='🍅';
     tb.title='Запустити таймер';
@@ -1204,6 +1231,7 @@ function renderMuseum(){
   const view=document.getElementById('museum-view');
   view.innerHTML='';
   const done=tasks.filter(t=>t.done).sort((a,b)=>new Date(b.done_at)-new Date(a.done_at));
+
   if(!done.length){
     view.innerHTML=`<div class="museum-empty">🏛<br><br>Тут з'являться твої завершені задачі.<br>Кожне завершення — це досвід, не просто галочка.</div>`;
     return;
@@ -1215,6 +1243,7 @@ function renderMuseum(){
     if(!byMonth[key])byMonth[key]={year:d.getFullYear(),month:d.getMonth(),tasks:[]};
     byMonth[key].tasks.push(t);
   });
+
   Object.values(byMonth).forEach(({year,month,tasks:mt})=>{
     const sec=document.createElement('div');sec.className='museum-month';
     const ttl=document.createElement('div');ttl.className='museum-month-ttl';
@@ -1254,6 +1283,7 @@ function openMod(t=null){
   const projs=getProjects();
   const projOpts=['<option value="">— без проєкту —</option>',
     ...projs.map(p=>`<option${t?.project===p?' selected':''}>${p}</option>`)].join('');
+
   body.innerHTML=`
     <div class="mttl">${t?'Редагувати':'Нова'} задача</div>
     <label class="ilbl">Назва</label>
@@ -1302,6 +1332,7 @@ async function saveTask(){
   const ttlEl=document.getElementById('m-ttl');
   if(!ttlEl?.value?.trim()){ttlEl?.focus();return;}
   const user=(await sb.auth.getUser()).data.user;
+
   const projNew=(document.getElementById('m-proj-new')?.value||'').trim();
   const projSel=document.getElementById('m-proj')?.value||'';
   const project=projNew||projSel||null;
@@ -1314,6 +1345,7 @@ async function saveTask(){
     context:document.getElementById('m-ctx')?.value||'inbox',
     project,done,done_at:done?new Date().toISOString():null,user_id:user.id,
   };
+
   const{error}=editId
     ?await sb.from('scanner_tasks').update(d).eq('id',editId)
     :await sb.from('scanner_tasks').insert([d]);
