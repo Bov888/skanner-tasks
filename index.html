@@ -120,7 +120,7 @@ border:1px solid var(--border);width:100%;max-width:380px;}
 @media(max-width: 480px) {
   #focus-btn {
     font-size: 0; 
-    width: 30px; /* Квадрат */
+    width: 30px; 
     padding: 0; 
   }
   #focus-btn::before {
@@ -492,7 +492,7 @@ body.focus-mode .done-section {
 .timer-btn:hover{border-color:var(--accent);color:var(--accent);}
 .timer-btn.primary:hover{opacity:.85;}
 
-/* ── FAB (Нова задача - квадратна, без тексту) ── */
+/* ── FAB (Нова задача - квадратна, зелена, без тексту) ── */
 #fab {
   position: fixed;
   bottom: 1.5rem;
@@ -500,16 +500,16 @@ body.focus-mode .done-section {
   width: 48px; 
   height: 48px;
   padding: 0;
-  border-radius: 6px; /* Ледь заокруглені краї */
-  background: var(--bg);
-  color: var(--accent);
-  border: 1px solid var(--accent);
+  border-radius: 2px; /* Маленьке заокруглення, як у всіх кнопок */
+  background: var(--accent); /* Зелений колір акценту */
+  color: #fff; /* Білий плюс */
+  border: none;
   cursor: pointer;
   z-index: 500;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 4px 18px rgba(0,0,0,.12);
+  box-shadow: 0 4px 18px rgba(0,0,0,.18);
   transition: all .15s;
   touch-action: manipulation;
 }
@@ -519,9 +519,9 @@ body.focus-mode .done-section {
   line-height: 1;
 }
 #fab:hover {
-  background: var(--accent-light);
+  background: var(--accent-mid); /* Трохи інший відтінок при наведенні */
   transform: translateY(-2px);
-  box-shadow: 0 6px 22px rgba(0,0,0,.18);
+  box-shadow: 0 6px 22px rgba(0,0,0,.22);
 }
 #fab:active {
   transform: translateY(0);
@@ -590,12 +590,21 @@ select.inp{
 .dtlbl{font-family:'JetBrains Mono',monospace;font-size:.65rem;
   letter-spacing:.06em;text-transform:uppercase;color:var(--muted);}
 .pbtn{
-  width:100%;padding:.56rem 1rem;border-radius:2px;background:var(--accent);
+  padding:.56rem 1rem;border-radius:2px;background:var(--accent);
   color:#fff;font-family:'JetBrains Mono',monospace;font-size:.62rem;
   font-weight:500;letter-spacing:.08em;text-transform:uppercase;
-  cursor:pointer;border:none;transition:opacity .15s;touch-action:manipulation;
+  cursor:pointer;border:none;transition:all .15s;touch-action:manipulation;
 }
 .pbtn:hover{opacity:.85;}
+.pbtn.secondary {
+  background: var(--surface);
+  color: var(--muted);
+  border: 1px solid var(--border);
+}
+.pbtn.secondary:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
 .delbtn{font-family:'JetBrains Mono',monospace;font-size:.56rem;
   letter-spacing:.06em;text-transform:uppercase;color:var(--error);
   background:none;cursor:pointer;padding:0;
@@ -628,7 +637,7 @@ select.inp{
     <input type="email" id="email" class="inp" placeholder="email@example.com" style="margin-bottom:.8rem">
     <label class="ilbl">Пароль</label>
     <input type="password" id="pass" class="inp" placeholder="••••••••" style="margin-bottom:1.2rem">
-    <button class="pbtn" onclick="doLogin()">Увійти</button>
+    <button class="pbtn" style="width:100%" onclick="doLogin()">Увійти</button>
     <p id="auth-err" class="aerr"></p>
   </div>
 </div>
@@ -699,6 +708,7 @@ select.inp{
   <button class="ctx-tab active" data-ctx="inbox">Вхідні<span class="badge" id="b-inbox">0</span></button>
   <button class="ctx-tab" data-ctx="today">Сьогодні<span class="badge" id="b-today">0</span></button>
   <button class="ctx-tab" data-ctx="waiting">Чекаю<span class="badge" id="b-waiting">0</span></button>
+  <button class="ctx-tab" data-ctx="icebox">🧊 Морозилка<span class="badge" id="b-icebox">0</span></button>
   <button class="ctx-tab" data-ctx="someday">Колись<span class="badge" id="b-someday">0</span></button>
 </nav>
 
@@ -751,6 +761,9 @@ select.inp{
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
         Нова задача
       </button>
+      <button class="sb-action-btn secondary" onclick="sbAction(runQuickWin)">
+        ⚡ Швидка перемога
+      </button>
       <button class="sb-action-btn secondary" onclick="sbAction(runRoulette)">
         🎲 Що зараз?
       </button>
@@ -789,12 +802,16 @@ let energyFilter='all';
 let projectFilter='all';
 let focusMode=false;
 let editId=null;
+
+// Оновлені контексти
 const CTXS={
   inbox:  {lbl:'Вхідні',   dot:'var(--muted)'},
   today:  {lbl:'Сьогодні', dot:'var(--accent)'},
   waiting:{lbl:'Чекаю',    dot:'var(--e-med)'},
+  icebox: {lbl:'Морозилка',dot:'var(--e-low)'}, // Новий контекст
   someday:{lbl:'Колись',   dot:'var(--muted)'},
 };
+
 const KINDS=[
   {id:'task',    icon:'☐', lbl:'Задача'},
   {id:'project', icon:'🎯',lbl:'Проєкт'},
@@ -964,10 +981,17 @@ function toggleFocus(){
   render();
 }
 
-/* ── ROULETTE ── */
+/* ── ROULETTE & QUICK WINS ── */
 function runRoulette(){
   const pool=tasks.filter(t=>t.context==='someday'&&!t.done);
   if(!pool.length){alert("Немає задач у 'Колись' для рулетки");return;}
+  openMod(pool[Math.floor(Math.random()*pool.length)]);
+}
+
+function runQuickWin(){
+  // Беремо незавершені задачі з низькою енергією, крім тих що у "Морозилці" чи "Колись"
+  const pool=tasks.filter(t=>!t.done && t.energy==='low' && t.context!=='someday' && t.context!=='icebox');
+  if(!pool.length){alert("Зараз немає активних задач на низьку енергію. Зроби перерву!");return;}
   openMod(pool[Math.floor(Math.random()*pool.length)]);
 }
 
@@ -1142,10 +1166,14 @@ function render(){
   if(energyFilter!=='all')visible=visible.filter(t=>(t.energy||'medium')===energyFilter);
   if(projectFilter!=='all')visible=visible.filter(t=>t.project===projectFilter);
 
-  // Інкубатор ідей: "Колись" відображається у вигляді сітки/мудборду
   if(activeCtx==='someday'){
     const col = buildCol('💡 Ідеї та плани (Someday / Maybe)', 'var(--muted)', null, visible, []);
     col.classList.add('someday-grid');
+    board.appendChild(col);
+  } else if (activeCtx==='icebox') {
+    // Рендер Морозилки
+    const col = buildCol('Заморожені проекти (На паузі)', 'var(--e-low)', null, visible, []);
+    col.classList.add('someday-grid'); // Морозилку теж зручно бачити сіткою
     board.appendChild(col);
   } else if(activeCtx==='inbox'){
     const done=tasks.filter(t=>t.done&&t.context==='inbox');
@@ -1286,7 +1314,6 @@ function renderMuseum(){
     const sec=document.createElement('div');sec.className='museum-month';
     const ttl=document.createElement('div');ttl.className='museum-month-ttl';
     
-    // Variety Tracker: Рахуємо кількість унікальних сфер (проєктів) за місяць
     const uniqueProjects = new Set(mt.map(t => t.project).filter(Boolean));
     const varietyCount = uniqueProjects.size;
 
@@ -1319,7 +1346,7 @@ async function moveCtx(t,ctx){
   await sb.from('scanner_tasks').update({context:ctx}).eq('id',t.id);sync();
 }
 
-/* ── MODAL ── */
+/* ── MODAL (ОНОВЛЕНО З КНОПКОЮ ВІДМІНИ) ── */
 function openMod(t=null){
   editId=t?.id??null;
   const body=document.getElementById('mbody');
@@ -1362,7 +1389,11 @@ function openMod(t=null){
     </div>
     ${t?`<label class="done-toggle-wrap"><input type="checkbox" id="m-done" ${t.done?'checked':''}>
       <span class="dttrack"></span><span class="dtlbl">Завершено</span></label>`:''}
-    <button class="pbtn" onclick="saveTask()">Зберегти</button>
+    
+    <div style="display:flex; gap:.5rem; margin-top:.75rem;">
+      <button class="pbtn" onclick="saveTask()" style="flex:2;">Зберегти</button>
+      <button class="pbtn secondary" onclick="closeMod()" style="flex:1;">Відмінити</button>
+    </div>
     ${t?`<button class="delbtn" onclick="delTask('${t.id}')">Видалити задачу</button>`:''}`;
   setTimeout(()=>document.getElementById('m-ttl')?.focus(),40);
 }
