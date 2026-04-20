@@ -8,7 +8,30 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Literata:ital,wght@0,300;0,400;0,500;1,300&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
-/* ══ VARIABLES — точна копія ScannerPlaner ══ */
+/*
+  SQL для Supabase (виконати один раз):
+
+  CREATE TABLE IF NOT EXISTS scanner_tasks (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id uuid REFERENCES auth.users(id),
+    title text NOT NULL,
+    note text,
+    context text DEFAULT 'inbox',
+    project text,
+    energy text DEFAULT 'medium',
+    kind text DEFAULT 'task',
+    done boolean DEFAULT false,
+    done_at timestamptz,
+    created_at timestamptz DEFAULT now()
+  );
+  ALTER TABLE scanner_tasks ENABLE ROW LEVEL SECURITY;
+  CREATE POLICY "own" ON scanner_tasks FOR ALL USING (auth.uid()=user_id);
+
+  -- Якщо таблиця вже є, додай колонку project:
+  ALTER TABLE scanner_tasks ADD COLUMN IF NOT EXISTS project text;
+*/
+
+/* ══ VARIABLES ══ */
 :root{
   --bg:#fafaf8;--surface:#f4f3ef;--border:#e2e1db;
   --text:#1a1917;--muted:#6b6963;
@@ -47,10 +70,10 @@ body{
   letter-spacing:-.02em;margin-bottom:2rem;text-align:center;}
 .auth-logo span{color:var(--accent);font-style:italic;}
 
-/* ══ TOPBAR — ідентичний ScannerPlaner ══ */
+/* ══ TOPBAR ══ */
 .topbar{
   height:52px;min-height:52px;display:flex;align-items:center;
-  padding:0 1rem;gap:.75rem;
+  padding:0 1rem;gap:.5rem;
   border-bottom:1px solid var(--border);
   background:var(--bg);flex-shrink:0;z-index:200;
 }
@@ -58,21 +81,18 @@ body{
   font-family:'Literata',serif;font-size:1.1rem;font-weight:400;
   letter-spacing:-.02em;color:var(--text);
   display:flex;align-items:center;gap:.5rem;
-  flex:1;cursor:pointer;background:none;
+  flex:1;cursor:pointer;background:none;min-width:0;
 }
 .site-title span{color:var(--accent);font-style:italic;}
-
-/* Icon btn — ідентичний */
 .ibtn{
   background:none;border:1px solid var(--border);color:var(--muted);
   cursor:pointer;display:flex;align-items:center;justify-content:center;
   width:32px;height:32px;border-radius:2px;flex-shrink:0;
   transition:border-color .15s,color .15s;touch-action:manipulation;
 }
-.ibtn:active,.ibtn:hover{border-color:var(--accent);color:var(--accent);}
+.ibtn:hover,.ibtn:active{border-color:var(--accent);color:var(--accent);}
 .ibtn svg{width:16px;height:16px;}
-
-/* Theme toggle — ідентичний */
+.ibtn.danger:hover,.ibtn.danger:active{border-color:var(--error);color:var(--error);}
 .theme-btn{
   background:var(--accent-light);border:1px solid var(--accent);color:var(--accent);
   font-size:.6rem;font-family:'JetBrains Mono',monospace;
@@ -81,22 +101,26 @@ body{
   white-space:nowrap;flex-shrink:0;touch-action:manipulation;
 }
 .theme-btn:hover{opacity:.7;}
-
-/* Спецкнопки в хедері */
 .hbtn{
-  font-family:'JetBrains Mono',monospace;font-size:.58rem;
-  letter-spacing:.06em;text-transform:uppercase;
+  font-family:'JetBrains Mono',monospace;font-size:.55rem;
+  letter-spacing:.05em;text-transform:uppercase;
   border:1px solid var(--border);color:var(--muted);
-  background:none;cursor:pointer;padding:.3rem .6rem;
+  background:none;cursor:pointer;padding:.3rem .55rem;
   border-radius:2px;white-space:nowrap;flex-shrink:0;
-  transition:border-color .15s,color .15s;touch-action:manipulation;
+  transition:all .15s;touch-action:manipulation;
 }
 .hbtn:hover{border-color:var(--accent);color:var(--accent);}
 .hbtn.on{background:var(--accent-light);border-color:var(--accent);color:var(--accent);}
 
-/* ══ CONTEXT TABS — стиль filter-row з ScannerPlaner ══ */
+/* на мобайлі — ховаємо деякі кнопки */
+@media(max-width:600px){
+  .hbtn.hide-mob{display:none;}
+  .site-title{font-size:.95rem;}
+}
+
+/* ══ CONTEXT TABS ══ */
 .ctx-bar{
-  display:flex;align-items:center;
+  display:flex;align-items:stretch;
   border-bottom:1px solid var(--border);
   background:var(--bg);flex-shrink:0;
   overflow-x:auto;scrollbar-width:none;
@@ -106,37 +130,30 @@ body{
   font-family:'JetBrains Mono',monospace;font-size:.58rem;
   letter-spacing:.08em;text-transform:uppercase;
   color:var(--muted);background:none;cursor:pointer;
-  padding:.65rem 1.1rem;
+  padding:.62rem 1rem;
   border-bottom:2px solid transparent;
   transition:color .15s,border-color .15s;
   white-space:nowrap;flex-shrink:0;touch-action:manipulation;
-  /* Drop target */
-  position:relative;
+  display:flex;align-items:center;gap:.3rem;
 }
 .ctx-tab:hover{color:var(--accent);}
 .ctx-tab.active{color:var(--accent);border-bottom-color:var(--accent);}
 .ctx-tab.dov{background:var(--accent-light);border-bottom-color:var(--accent);color:var(--accent);}
+/* Музей — особливий */
+.ctx-tab[data-ctx=museum]{color:var(--e-med);}
+.ctx-tab[data-ctx=museum].active{border-bottom-color:var(--e-med);color:var(--e-med);}
+
 .badge{
   display:inline-flex;align-items:center;justify-content:center;
   min-width:15px;height:15px;padding:0 3px;
   background:var(--surface);color:var(--muted);
-  border-radius:7px;font-size:.48rem;margin-left:.3rem;
+  border-radius:7px;font-size:.48rem;
   border:1px solid var(--border);
 }
 .ctx-tab.active .badge{background:var(--accent-light);color:var(--accent);border-color:var(--accent);}
-.ctx-sep{width:1px;height:20px;background:var(--border);flex-shrink:0;margin:0 .1rem;}
-.ctx-add{
-  margin-left:auto;margin-right:.75rem;flex-shrink:0;
-  font-family:'JetBrains Mono',monospace;font-size:.58rem;
-  letter-spacing:.06em;text-transform:uppercase;
-  background:var(--accent);color:#fff;
-  border:none;cursor:pointer;
-  padding:.35rem .7rem;border-radius:2px;
-  white-space:nowrap;touch-action:manipulation;
-}
-.ctx-add:hover{opacity:.85;}
+.ctx-tab[data-ctx=museum].active .badge{background:#fdf3e7;color:var(--e-med);border-color:var(--e-med);}
 
-/* ══ ENERGY FILTER BAR — chip-стиль з ScannerPlaner ══ */
+/* ══ ENERGY FILTER ══ */
 .ebar{
   display:flex;align-items:center;gap:.35rem;
   padding:.28rem 1rem;border-bottom:1px solid var(--border);
@@ -161,163 +178,242 @@ body{
 .echip:hover{border-color:var(--accent);color:var(--accent);}
 .echip.on{background:var(--accent-light);border-color:var(--accent);color:var(--accent);}
 
+/* ══ PROJECT FILTER ══ */
+.pbar{
+  display:flex;align-items:center;gap:.35rem;
+  padding:.28rem 1rem;border-bottom:1px solid var(--border);
+  flex-shrink:0;overflow-x:auto;scrollbar-width:none;
+  min-height:34px;
+}
+.pbar:empty,.pbar:not(:has(.pchip)){display:none;}
+.pbar::-webkit-scrollbar{display:none;}
+.pbar-lbl{
+  font-family:'JetBrains Mono',monospace;font-size:.48rem;
+  letter-spacing:.1em;text-transform:uppercase;color:var(--muted);
+  white-space:nowrap;flex-shrink:0;
+  padding-right:.5rem;border-right:1px solid var(--border);
+}
+.pchip{
+  font-family:'JetBrains Mono',monospace;font-size:.55rem;
+  letter-spacing:.05em;text-transform:uppercase;
+  border:1px solid var(--border);color:var(--muted);
+  padding:.18rem .55rem;border-radius:2px;
+  cursor:pointer;background:none;
+  transition:all .15s;white-space:nowrap;flex-shrink:0;
+  touch-action:manipulation;
+}
+.pchip:hover{border-color:var(--accent);color:var(--accent);}
+.pchip.on{background:var(--accent-light);border-color:var(--accent);color:var(--accent);}
+
 /* ══ BOARD ══ */
-.app-body{flex:1;display:flex;overflow:hidden;}
+.app-body{flex:1;display:flex;overflow:hidden;position:relative;}
 #board{
   flex:1;display:flex;
-  padding:1.2rem;gap:1rem;
+  padding:1rem;gap:.8rem;
   overflow-x:auto;overflow-y:hidden;
   align-items:flex-start;
   scrollbar-width:thin;scrollbar-color:var(--border) transparent;
 }
 @media(max-width:700px){
-  #board{flex-direction:column;overflow-x:hidden;overflow-y:auto;padding:.8rem;gap:.7rem;}
+  #board{flex-direction:column;overflow-x:hidden;overflow-y:auto;padding:.75rem;gap:.6rem;}
 }
 
-/* ══ COLUMN ══ */
+/* ══ COLUMN ══
+   Ключова зміна: колонки тепер flex:1 і ростуть
+   на всю доступну ширину. Мін-ширина лише для скролу.
+*/
 .col{
-  width:280px;min-width:280px;
+  flex:1;min-width:240px;
   background:var(--surface);
-  border:1px solid var(--border);
-  border-radius:3px;
+  border:1px solid var(--border);border-radius:3px;
   display:flex;flex-direction:column;
-  flex-shrink:0;
   max-height:100%;
   transition:border-color .15s,background .15s;
 }
 .col.dov{border-color:var(--accent);background:var(--accent-light);}
-@media(max-width:700px){.col{width:100%;min-width:0;max-height:none;}}
+@media(max-width:700px){.col{flex:none;width:100%;min-width:0;max-height:none;}}
 
 .col-head{
   display:flex;align-items:center;justify-content:space-between;
-  padding:.65rem .9rem;border-bottom:1px solid var(--border);flex-shrink:0;
+  padding:.6rem .9rem;border-bottom:1px solid var(--border);flex-shrink:0;
 }
 .col-title{
   font-family:'JetBrains Mono',monospace;font-size:.58rem;
   letter-spacing:.1em;text-transform:uppercase;color:var(--muted);
-  display:flex;align-items:center;gap:.45rem;
+  display:flex;align-items:center;gap:.4rem;
 }
 .col-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
-.col-count{
-  font-family:'JetBrains Mono',monospace;font-size:.52rem;color:var(--muted);
-}
-.col-body{flex:1;overflow-y:auto;padding:.5rem .5rem .3rem;}
+.col-count{font-family:'JetBrains Mono',monospace;font-size:.52rem;color:var(--muted);}
+.col-body{flex:1;overflow-y:auto;padding:.45rem;}
 
-/* Швидкий ввід */
-.col-footer{padding:.4rem .5rem;border-top:1px solid var(--border);flex-shrink:0;}
+.col-footer{padding:.4rem .45rem;border-top:1px solid var(--border);flex-shrink:0;}
 .quick-inp{
-  width:100%;padding:.45rem .6rem;
+  width:100%;padding:.4rem .6rem;
   background:var(--bg);color:var(--text);
   border:1px solid var(--border);border-radius:2px;
-  font-family:'Literata',Georgia,serif;font-size:.8rem;font-weight:300;
+  font-family:'Literata',Georgia,serif;font-size:.82rem;font-weight:300;
   transition:border-color .15s;
 }
-.quick-inp:focus{border-color:var(--accent);outline:none;}
+.quick-inp:focus{border-color:var(--accent);}
 .quick-inp::placeholder{color:var(--muted);}
 
-/* Секція завершених */
+/* Завершені */
 .done-row{
   display:flex;align-items:center;gap:.4rem;
-  padding:.4rem .9rem;border-top:1px solid var(--border);
+  padding:.38rem .9rem;border-top:1px solid var(--border);
   cursor:pointer;flex-shrink:0;user-select:none;
 }
-.done-row-lbl{
-  font-family:'JetBrains Mono',monospace;font-size:.5rem;
-  letter-spacing:.08em;text-transform:uppercase;color:var(--muted);flex:1;
-}
+.done-row-lbl{font-family:'JetBrains Mono',monospace;font-size:.5rem;
+  letter-spacing:.08em;text-transform:uppercase;color:var(--muted);flex:1;}
 .done-row-arr{font-size:.55rem;color:var(--muted);transition:transform .2s;}
 .done-row.open .done-row-arr{transform:rotate(90deg);}
-.done-section{display:none;overflow-y:auto;max-height:160px;padding:.4rem .5rem;}
+.done-section{display:none;overflow-y:auto;max-height:160px;padding:.4rem .45rem;}
 .done-row.open+.done-section{display:block;}
 
 /* ══ TASK CARD ══ */
 .tcard{
   background:var(--bg);
   border:1px solid var(--border);border-radius:3px;
-  padding:.65rem .75rem .65rem .9rem;
-  margin-bottom:.35rem;
-  cursor:pointer;
-  position:relative;
+  padding:.6rem .75rem .6rem .85rem;
+  margin-bottom:.3rem;
+  cursor:pointer;position:relative;
   transition:border-color .15s,transform .1s;
-  touch-action:none; /* для pointer drag */
-  user-select:none;
+  touch-action:none;user-select:none;
 }
-.tcard:hover{border-color:var(--accent-mid);transform:translateY(-1px);}
-
+.tcard:hover{border-color:var(--accent-mid);}
 /* Енергетична смужка */
 .tcard::before{
-  content:'';
-  position:absolute;left:0;top:3px;bottom:3px;
-  width:3px;border-radius:0 2px 2px 0;
-  background:var(--border);
+  content:'';position:absolute;left:0;top:3px;bottom:3px;
+  width:3px;border-radius:0 2px 2px 0;background:var(--border);
 }
 .tcard[data-e=low]::before{background:var(--e-low);}
 .tcard[data-e=medium]::before{background:var(--e-med);}
 .tcard[data-e=high]::before{background:var(--e-high);}
-
-/* Stale */
 .tcard.stale{opacity:.55;border-style:dashed;}
-
-/* Done картка */
-.tcard.done-card{
-  opacity:.45;
-  background:var(--surface);
-}
+.tcard.done-card{opacity:.45;background:var(--surface);}
 .tcard.done-card .tc-title{text-decoration:line-through;color:var(--muted);}
 .tcard.done-card::before{background:var(--border)!important;}
 
-.tc-row{display:flex;align-items:flex-start;gap:.5rem;margin-bottom:.3rem;}
+/* Картка перетягується */
+.tcard.dragging{opacity:.35;transform:scale(.98);}
 
-/* Чекбокс — кліком завершуємо */
+.tc-row{display:flex;align-items:flex-start;gap:.45rem;margin-bottom:.28rem;}
 .tc-cb{
   width:16px;height:16px;min-width:16px;
   border:1px solid var(--border);border-radius:2px;
   background:none;cursor:pointer;
   display:flex;align-items:center;justify-content:center;
   margin-top:2px;flex-shrink:0;
-  transition:border-color .15s,background .15s;
-  touch-action:manipulation;
+  transition:border-color .15s,background .15s;touch-action:manipulation;
+  font-size:.55rem;
 }
 .tc-cb:hover{border-color:var(--accent);}
-.tcard.done-card .tc-cb{
-  background:var(--accent);border-color:var(--accent);
-  color:#fff;font-size:.55rem;
-}
+.tcard.done-card .tc-cb{background:var(--accent);border-color:var(--accent);color:#fff;}
 .tc-title{
   font-family:'Literata',Georgia,serif;font-size:.88rem;font-weight:300;
   line-height:1.4;flex:1;word-break:break-word;
 }
 .tc-meta{
-  font-family:'JetBrains Mono',monospace;font-size:.52rem;
+  font-family:'JetBrains Mono',monospace;font-size:.5rem;
   color:var(--muted);text-transform:uppercase;letter-spacing:.04em;
-  display:flex;align-items:center;gap:.4rem;flex-wrap:wrap;
+  display:flex;align-items:center;gap:.35rem;flex-wrap:wrap;margin-bottom:.3rem;
 }
-.tc-kind-icon{font-size:.65rem;opacity:.7;}
-.tc-stale{font-size:.7rem;}
-/* Швидкий перехід між контекстами */
-.tc-ctx-btns{
-  display:flex;gap:.25rem;margin-top:.4rem;flex-wrap:wrap;
-}
-.tc-ctx-btn{
-  font-family:'JetBrains Mono',monospace;font-size:.45rem;
-  letter-spacing:.04em;text-transform:uppercase;
-  background:none;border:1px solid var(--border);
-  color:var(--muted);cursor:pointer;
+.tc-proj{
+  background:var(--accent-light);color:var(--accent);
   padding:.1rem .35rem;border-radius:2px;
-  transition:border-color .15s,color .15s;touch-action:manipulation;
+}
+.tc-ctx-btns{display:flex;gap:.22rem;flex-wrap:wrap;}
+.tc-ctx-btn{
+  font-family:'JetBrains Mono',monospace;font-size:.44rem;
+  letter-spacing:.04em;text-transform:uppercase;
+  background:none;border:1px solid var(--border);color:var(--muted);
+  cursor:pointer;padding:.1rem .32rem;border-radius:2px;
+  transition:all .15s;touch-action:manipulation;
 }
 .tc-ctx-btn:hover{border-color:var(--accent);color:var(--accent);}
 
-/* ══ GHOST (drag) ══ */
-.drag-ghost{
-  position:fixed;pointer-events:none;z-index:9999;
-  background:var(--accent);color:#fff;
-  border-radius:3px;padding:5px 10px;
-  font-family:'JetBrains Mono',monospace;font-size:.62rem;
-  opacity:.9;transform:translate(-50%,-60%) scale(1.04);
-  box-shadow:0 6px 20px rgba(0,0,0,.3);
-  max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+/* ══ МУЗЕЙ УСПІХІВ ══ */
+#museum-view{flex:1;overflow-y:auto;padding:1.5rem;}
+.museum-month{margin-bottom:2rem;}
+.museum-month-ttl{
+  font-family:'Literata',serif;font-size:1.3rem;font-weight:300;
+  letter-spacing:-.02em;color:var(--e-med);
+  margin-bottom:.8rem;display:flex;align-items:center;gap:.5rem;
 }
+.museum-month-ttl span{font-family:'JetBrains Mono',monospace;font-size:.55rem;
+  color:var(--muted);letter-spacing:.1em;text-transform:uppercase;}
+.museum-grid{display:flex;flex-direction:column;gap:.35rem;}
+.museum-card{
+  background:var(--surface);border:1px solid var(--border);border-radius:3px;
+  padding:.6rem .9rem .6rem 1.1rem;
+  position:relative;display:flex;align-items:center;gap:.6rem;
+}
+.museum-card::before{
+  content:'';position:absolute;left:0;top:3px;bottom:3px;
+  width:3px;border-radius:0 2px 2px 0;background:var(--e-med);
+  opacity:.4;
+}
+.museum-card-ttl{font-size:.88rem;font-weight:300;flex:1;color:var(--muted);}
+.museum-card-date{font-family:'JetBrains Mono',monospace;font-size:.5rem;
+  color:var(--muted);letter-spacing:.04em;white-space:nowrap;}
+.museum-card-kind{font-size:.75rem;opacity:.5;}
+.museum-empty{
+  text-align:center;padding:4rem 1rem;
+  font-family:'JetBrains Mono',monospace;font-size:.6rem;
+  letter-spacing:.1em;text-transform:uppercase;color:var(--muted);
+}
+
+/* ══ TIMER OVERLAY ══ */
+#timer-overlay{
+  position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:7000;
+  display:none;align-items:center;justify-content:center;
+  backdrop-filter:blur(8px);
+}
+.timer-card{
+  background:var(--bg);border:1px solid var(--border);border-radius:3px;
+  padding:2.5rem;width:90%;max-width:420px;text-align:center;
+}
+.timer-task{
+  font-family:'Literata',serif;font-size:1.2rem;font-weight:300;
+  line-height:1.4;margin-bottom:1.5rem;color:var(--text);
+}
+.timer-display{
+  font-family:'JetBrains Mono',monospace;font-size:3.5rem;
+  color:var(--accent);letter-spacing:.1em;margin-bottom:1.5rem;
+}
+.timer-display.urgent{color:var(--e-high);}
+.timer-btn-row{display:flex;gap:.5rem;justify-content:center;flex-wrap:wrap;}
+.timer-btn{
+  font-family:'JetBrains Mono',monospace;font-size:.6rem;
+  letter-spacing:.08em;text-transform:uppercase;
+  border:1px solid var(--border);color:var(--muted);
+  background:none;cursor:pointer;padding:.45rem .9rem;border-radius:2px;
+  transition:all .15s;touch-action:manipulation;
+}
+.timer-btn.primary{background:var(--accent);color:#fff;border-color:var(--accent);}
+.timer-btn:hover{border-color:var(--accent);color:var(--accent);}
+.timer-btn.primary:hover{opacity:.85;}
+.timer-label{
+  font-family:'JetBrains Mono',monospace;font-size:.55rem;
+  letter-spacing:.1em;text-transform:uppercase;color:var(--muted);
+  margin-bottom:.75rem;
+}
+
+/* ══ FAB (Float Action Button) ══ */
+#fab{
+  position:fixed;bottom:1.5rem;right:1.5rem;
+  width:52px;height:52px;border-radius:50%;
+  background:var(--accent);color:#fff;
+  border:none;cursor:pointer;z-index:500;
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 4px 16px rgba(0,0,0,.25);
+  transition:transform .15s,box-shadow .15s;
+  touch-action:manipulation;font-size:1.4rem;
+}
+#fab:hover{transform:scale(1.06);box-shadow:0 6px 20px rgba(0,0,0,.3);}
+#fab:active{transform:scale(.97);}
+/* На великих екранах — прибираємо FAB, є кнопка в хедері */
+@media(min-width:900px){#fab{display:none;}}
 
 /* ══ MODAL ══ */
 .modal{
@@ -333,88 +429,90 @@ body{
 }
 .mttl{font-family:'Literata',serif;font-size:1.1rem;font-weight:300;
   letter-spacing:-.02em;margin-bottom:1.5rem;}
-.ilbl{
-  font-family:'JetBrains Mono',monospace;font-size:.55rem;
+.ilbl{font-family:'JetBrains Mono',monospace;font-size:.55rem;
   letter-spacing:.08em;text-transform:uppercase;color:var(--muted);
-  display:block;margin-bottom:.3rem;
-}
+  display:block;margin-bottom:.28rem;}
 .inp{
-  width:100%;padding:.55rem .8rem;margin-bottom:.75rem;border-radius:2px;
+  width:100%;padding:.52rem .8rem;margin-bottom:.7rem;border-radius:2px;
   background:var(--surface);color:var(--text);border:1px solid var(--border);
   font-family:'Literata',Georgia,serif;font-size:.88rem;font-weight:300;
   transition:border-color .15s;
 }
 .inp:focus{border-color:var(--accent);}
 .inp::placeholder{color:var(--muted);}
-textarea.inp{resize:vertical;min-height:72px;line-height:1.5;}
+textarea.inp{resize:vertical;min-height:68px;line-height:1.5;}
 select.inp{
   font-family:'JetBrains Mono',monospace;font-size:.68rem;
   appearance:none;
   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238a8880' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
   background-repeat:no-repeat;background-position:right .7rem center;cursor:pointer;
 }
-/* Сегментні кнопки в модалці — ідентичні kind-btn з ScannerPlaner */
-.seg{display:flex;gap:.4rem;margin-bottom:.75rem;}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:.6rem;}
+.seg{display:flex;gap:.35rem;margin-bottom:.7rem;flex-wrap:wrap;}
 .seg-btn{
-  flex:1;padding:.45rem .3rem;border-radius:2px;
+  flex:1;min-width:60px;padding:.4rem .3rem;border-radius:2px;
   border:1px solid var(--border);background:none;color:var(--muted);
-  font-family:'JetBrains Mono',monospace;font-size:.52rem;
+  font-family:'JetBrains Mono',monospace;font-size:.5rem;
   letter-spacing:.04em;text-transform:uppercase;cursor:pointer;
   transition:all .15s;display:flex;flex-direction:column;align-items:center;gap:3px;
   touch-action:manipulation;
 }
-.seg-btn .si{font-size:.9rem;line-height:1;}
+.seg-btn .si{font-size:.88rem;line-height:1;}
 .seg-btn:hover{border-color:var(--accent);color:var(--accent);}
 .seg-btn.on{background:var(--accent-light);border-color:var(--accent);color:var(--accent);}
-/* Енергія — власні кольори */
 .seg-btn[data-e=low].on{background:#edf5ee;border-color:var(--e-low);color:var(--e-low);}
 .seg-btn[data-e=medium].on{background:#fdf3e7;border-color:var(--e-med);color:var(--e-med);}
 .seg-btn[data-e=high].on{background:#fde8e6;border-color:var(--e-high);color:var(--e-high);}
 [data-theme=dark] .seg-btn[data-e=low].on{background:#1a2e1c;border-color:var(--e-low);color:var(--e-low);}
 [data-theme=dark] .seg-btn[data-e=medium].on{background:#2e2010;border-color:var(--e-med);color:var(--e-med);}
 [data-theme=dark] .seg-btn[data-e=high].on{background:#2e1010;border-color:var(--e-high);color:var(--e-high);}
-
-/* Toggle "завершено" в модалці */
 .done-toggle-wrap{
   display:flex;align-items:center;gap:.6rem;
-  padding:.55rem 0;margin-bottom:.75rem;cursor:pointer;
+  padding:.52rem 0;margin-bottom:.7rem;cursor:pointer;
 }
 .done-toggle-wrap input{display:none;}
-.dttrack{
-  width:30px;height:16px;background:var(--border);border-radius:8px;
-  position:relative;transition:background .2s;flex-shrink:0;
-}
-.dttrack::after{
-  content:'';position:absolute;top:2px;left:2px;
-  width:12px;height:12px;border-radius:50%;background:#fff;transition:transform .2s;
-}
+.dttrack{width:30px;height:16px;background:var(--border);border-radius:8px;
+  position:relative;transition:background .2s;flex-shrink:0;}
+.dttrack::after{content:'';position:absolute;top:2px;left:2px;
+  width:12px;height:12px;border-radius:50%;background:#fff;transition:transform .2s;}
 .done-toggle-wrap input:checked+.dttrack{background:var(--accent);}
 .done-toggle-wrap input:checked+.dttrack::after{transform:translateX(14px);}
-.dtlbl{font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);}
-
+.dtlbl{font-family:'JetBrains Mono',monospace;font-size:.62rem;
+  letter-spacing:.06em;text-transform:uppercase;color:var(--muted);}
 .pbtn{
-  width:100%;padding:.55rem 1rem;border-radius:2px;background:var(--accent);
+  width:100%;padding:.52rem 1rem;border-radius:2px;background:var(--accent);
   color:#fff;font-family:'JetBrains Mono',monospace;font-size:.6rem;
   font-weight:500;letter-spacing:.08em;text-transform:uppercase;
   cursor:pointer;border:none;transition:opacity .15s;touch-action:manipulation;
 }
 .pbtn:hover{opacity:.85;}
-.delbtn{
-  font-family:'JetBrains Mono',monospace;font-size:.55rem;
+.delbtn{font-family:'JetBrains Mono',monospace;font-size:.55rem;
   letter-spacing:.06em;text-transform:uppercase;color:var(--error);
   background:none;cursor:pointer;padding:0;
-  margin-top:.7rem;width:100%;text-align:center;touch-action:manipulation;
-}
+  margin-top:.7rem;width:100%;text-align:center;touch-action:manipulation;}
 .aerr{color:var(--error);font-family:'JetBrains Mono',monospace;
   font-size:.62rem;margin-top:.7rem;text-align:center;}
 .ldg{font-family:'JetBrains Mono',monospace;font-size:.62rem;
   color:var(--muted);text-align:center;padding:3rem;letter-spacing:.06em;}
-.empty{
-  display:flex;flex-direction:column;align-items:center;
-  padding:2rem 1rem;gap:.5rem;
-}
+.empty{display:flex;flex-direction:column;align-items:center;padding:2rem 1rem;gap:.5rem;}
 .empty-lbl{font-family:'JetBrains Mono',monospace;font-size:.55rem;
   letter-spacing:.08em;text-transform:uppercase;color:var(--muted);}
+
+/* ══ DRAG GHOST ══ */
+.drag-ghost{
+  position:fixed;pointer-events:none;z-index:9999;
+  background:var(--accent);color:#fff;
+  border-radius:3px;padding:5px 10px;
+  font-family:'JetBrains Mono',monospace;font-size:.62rem;
+  opacity:.9;transform:translate(-50%,-60%) scale(1.04);
+  box-shadow:0 6px 20px rgba(0,0,0,.3);
+  max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+
+/* ══ FOCUS MODE — підсвітка ══ */
+body.focus-mode .tcard:not(.focus-match){
+  opacity:.2;pointer-events:none;
+}
 </style>
 </head>
 <body>
@@ -431,10 +529,24 @@ select.inp{
   </div>
 </div>
 
+<!-- Timer overlay -->
+<div id="timer-overlay">
+  <div class="timer-card">
+    <div class="timer-label">⏱ 5 хвилин фокусу</div>
+    <div class="timer-task" id="timer-task-ttl">—</div>
+    <div class="timer-display" id="timer-display">5:00</div>
+    <div class="timer-btn-row">
+      <button class="timer-btn primary" id="timer-start-btn" onclick="timerToggle()">Старт</button>
+      <button class="timer-btn" onclick="timerDone()">✓ Готово</button>
+      <button class="timer-btn" onclick="timerClose()">✕ Скасувати</button>
+    </div>
+  </div>
+</div>
+
 <!-- TOPBAR -->
 <header class="topbar">
   <button class="site-title" onclick="location.reload()">
-    <svg width="28" height="28" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+    <svg width="26" height="26" viewBox="0 0 32 32" fill="none" aria-hidden="true">
       <line x1="16" y1="15" x2="6"  y2="6"  stroke="var(--accent)" stroke-width="0.9" opacity="0.35"/>
       <line x1="16" y1="15" x2="26" y2="6"  stroke="var(--accent)" stroke-width="0.9" opacity="0.35"/>
       <line x1="16" y1="15" x2="27" y2="18" stroke="var(--accent)" stroke-width="0.9" opacity="0.35"/>
@@ -457,59 +569,58 @@ select.inp{
     </svg>
     Scanner<span>Tasks</span>
   </button>
-  <button class="hbtn" onclick="runRoulette()" title="Випадкова задача з Колись">🎲 Що зараз?</button>
-  <button class="hbtn" id="focus-btn" onclick="toggleFocus()">🎯 Фокус</button>
+  <!-- На великих екранах — кнопки утиліт -->
+  <button class="hbtn hide-mob" onclick="runRoulette()" title="Випадкова задача з Колись">🎲 Що зараз?</button>
+  <button class="hbtn hide-mob" onclick="startTimer()" title="5 хвилин фокусу">⏱ 5 хв</button>
+  <button class="hbtn hide-mob" id="focus-btn" onclick="toggleFocus()">🎯 Фокус</button>
   <button class="theme-btn" id="theme-btn" onclick="toggleTheme()">☾ тема</button>
-  <button class="ibtn" id="btn-add" title="Нова задача">
+  <!-- Кнопка нової задачі — тільки на великих екранах -->
+  <button class="ibtn hide-mob" id="btn-add" title="Нова задача">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+  </button>
+  <button class="ibtn danger" id="btn-logout" title="Вийти">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/>
+    </svg>
   </button>
 </header>
 
-<!-- CONTEXT TABS (drag targets) -->
+<!-- CONTEXT TABS -->
 <nav class="ctx-bar" id="ctx-bar">
   <button class="ctx-tab active" data-ctx="inbox">Вхідні<span class="badge" id="b-inbox">0</span></button>
   <button class="ctx-tab" data-ctx="today">Сьогодні<span class="badge" id="b-today">0</span></button>
   <button class="ctx-tab" data-ctx="waiting">Чекаю<span class="badge" id="b-waiting">0</span></button>
   <button class="ctx-tab" data-ctx="someday">Колись<span class="badge" id="b-someday">0</span></button>
-  <button class="ctx-add" onclick="openMod(null)">+ Задача</button>
+  <button class="ctx-tab" data-ctx="museum" style="margin-left:auto;">🏛 Музей<span class="badge" id="b-museum" style="background:#fdf3e7;color:var(--e-med)">0</span></button>
 </nav>
 
 <!-- ENERGY FILTER -->
-<div class="ebar">
+<div class="ebar" id="ebar">
   <span class="ebar-lbl">Енергія</span>
-  <button class="echip on" data-e="all" onclick="setFilter(this,'all')">Всі</button>
-  <button class="echip" data-e="low"  onclick="setFilter(this,'low')">🌿 Низька</button>
-  <button class="echip" data-e="medium" onclick="setFilter(this,'medium')">⚡ Середня</button>
-  <button class="echip" data-e="high" onclick="setFilter(this,'high')">🔥 Висока</button>
+  <button class="echip on" data-e="all" onclick="setEFilter(this,'all')">Всі</button>
+  <button class="echip" data-e="low"    onclick="setEFilter(this,'low')">🌿 Низька</button>
+  <button class="echip" data-e="medium" onclick="setEFilter(this,'medium')">⚡ Середня</button>
+  <button class="echip" data-e="high"   onclick="setEFilter(this,'high')">🔥 Висока</button>
+</div>
+
+<!-- PROJECT FILTER -->
+<div class="pbar" id="pbar">
+  <span class="pbar-lbl">Проєкт</span>
 </div>
 
 <div class="app-body">
   <div id="board"><p class="ldg">Завантаження...</p></div>
+  <div id="museum-view" style="display:none;flex:1;overflow-y:auto;padding:1.5rem;"></div>
 </div>
+
+<!-- FAB — тільки на мобайлі -->
+<button id="fab" onclick="openMod(null)" title="Нова задача">＋</button>
 
 <div id="modal" class="modal" onclick="if(event.target===this)closeMod()">
   <div class="mcard" id="mbody"></div>
 </div>
 
 <script>
-/*
-  SQL для Supabase (виконати один раз):
-  CREATE TABLE IF NOT EXISTS scanner_tasks (
-    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id uuid REFERENCES auth.users(id),
-    title text NOT NULL,
-    note text,
-    context text DEFAULT 'inbox',
-    energy text DEFAULT 'medium',
-    kind text DEFAULT 'task',
-    done boolean DEFAULT false,
-    done_at timestamptz,
-    created_at timestamptz DEFAULT now()
-  );
-  ALTER TABLE scanner_tasks ENABLE ROW LEVEL SECURITY;
-  CREATE POLICY "own" ON scanner_tasks FOR ALL USING (auth.uid()=user_id);
-*/
-
 const SB_URL="https://mlkdphygsdfcanztbtez.supabase.co";
 const SB_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1sa2RwaHlnc2RmY2FuenRidGV6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYyODAwNTAsImV4cCI6MjA5MTg1NjA1MH0.PfjkZXua-9tp2lxVsBD3YBUNpx_USmMha5BQBZcGLFc";
 const sb=supabase.createClient(SB_URL,SB_KEY);
@@ -517,6 +628,7 @@ const sb=supabase.createClient(SB_URL,SB_KEY);
 let tasks=[];
 let activeCtx='inbox';
 let energyFilter='all';
+let projectFilter='all';
 let focusMode=false;
 let editId=null;
 
@@ -537,7 +649,13 @@ const ENERGIES=[
   {id:'medium',icon:'⚡',lbl:'Середня'},
   {id:'high',  icon:'🔥',lbl:'Висока'},
 ];
+const UA_MONTHS=['Січень','Лютий','Березень','Квітень','Травень','Червень',
+  'Липень','Серпень','Вересень','Жовтень','Листопад','Грудень'];
+
 const kIcon=k=>KINDS.find(x=>x.id===k)?.icon||'☐';
+function getProjects(){
+  return [...new Set(tasks.filter(t=>t.project).map(t=>t.project))].sort();
+}
 
 /* ── THEME ── */
 function initTheme(){
@@ -547,8 +665,7 @@ function initTheme(){
 }
 function toggleTheme(){
   const n=document.documentElement.dataset.theme==='dark'?'light':'dark';
-  document.documentElement.dataset.theme=n;
-  localStorage.setItem('st-theme',n);
+  document.documentElement.dataset.theme=n;localStorage.setItem('st-theme',n);
   document.getElementById('theme-btn').textContent=n==='dark'?'☀ тема':'☾ тема';
 }
 
@@ -557,6 +674,8 @@ async function doLogin(){
   const{error}=await sb.auth.signInWithPassword({email:email.value,password:pass.value});
   if(error)document.getElementById('auth-err').textContent='Помилка: '+error.message;
 }
+async function doLogout(){await sb.auth.signOut();location.reload();}
+document.getElementById('btn-logout').addEventListener('click',doLogout);
 sb.auth.onAuthStateChange((ev,sess)=>{
   document.getElementById('auth-gate').style.display=sess?'none':'flex';
   if(sess)sync();
@@ -568,6 +687,7 @@ async function sync(){
   const{data}=await sb.from('scanner_tasks').select('*').order('created_at',{ascending:false});
   tasks=data||[];
   updateBadges();
+  renderProjectFilter();
   render();
 }
 function updateBadges(){
@@ -576,31 +696,124 @@ function updateBadges(){
     const el=document.getElementById('b-'+k);
     if(el)el.textContent=c;
   });
+  const mu=tasks.filter(t=>t.done).length;
+  const bmu=document.getElementById('b-museum');
+  if(bmu)bmu.textContent=mu;
 }
 
-/* ── FILTER ── */
-function setFilter(btn,val){
+/* ── PROJECT FILTER BAR ── */
+function renderProjectFilter(){
+  const pbar=document.getElementById('pbar');
+  const projs=getProjects();
+  pbar.innerHTML='<span class="pbar-lbl">Проєкт</span>';
+  if(!projs.length){pbar.style.display='none';return;}
+  pbar.style.display='flex';
+  const all=document.createElement('button');
+  all.className='pchip'+(projectFilter==='all'?' on':'');
+  all.textContent='Всі';all.onclick=()=>setPFilter('all');
+  pbar.appendChild(all);
+  projs.forEach(p=>{
+    const b=document.createElement('button');
+    b.className='pchip'+(projectFilter===p?' on':'');
+    b.textContent=p;b.onclick=()=>setPFilter(p);
+    pbar.appendChild(b);
+  });
+}
+function setPFilter(val){
+  projectFilter=val;
+  document.querySelectorAll('.pchip').forEach(b=>b.classList.remove('on'));
+  document.querySelector(`.pchip`)?.parentNode.querySelectorAll('.pchip').forEach(b=>{
+    if((val==='all'&&b.textContent==='Всі')||b.textContent===val)b.classList.add('on');
+  });
+  render();
+}
+
+/* ── FILTERS ── */
+function setEFilter(btn,val){
   energyFilter=val;
   document.querySelectorAll('.echip').forEach(b=>b.classList.remove('on'));
   btn.classList.add('on');
   render();
 }
 
-/* ── FOCUS ── */
+/* ── FOCUS MODE ──
+   Підсвічує тільки задачі типу 'task' у контексті 'today'.
+   Решта стає напівпрозорою через CSS клас.
+*/
 function toggleFocus(){
   focusMode=!focusMode;
   document.getElementById('focus-btn').classList.toggle('on',focusMode);
+  document.body.classList.toggle('focus-mode',focusMode);
   render();
 }
 
 /* ── ROULETTE ── */
 function runRoulette(){
-  const pool=tasks.filter(t=>t.context==='someday'&&!t.done&&t.energy!=='high');
-  if(!pool.length){alert("Немає ідей у 'Колись' для рулетки");return;}
-  openMod(pool[Math.floor(Math.random()*pool.length)]);
+  const pool=tasks.filter(t=>t.context==='someday'&&!t.done);
+  if(!pool.length){alert("Немає задач у 'Колись'");return;}
+  const t=pool[Math.floor(Math.random()*pool.length)];
+  openMod(t);
 }
 
-/* ── CTX TABS — click ── */
+/* ── 5-MINUTE TIMER ── */
+let timerInterval=null;
+let timerSeconds=300;
+let timerTaskId=null;
+let timerRunning=false;
+
+function startTimer(task=null){
+  /* Якщо task не переданий — беремо випадкову з вхідних */
+  if(!task){
+    const pool=tasks.filter(t=>t.context==='inbox'&&!t.done);
+    if(!pool.length){alert("Немає задач у Вхідних для таймера");return;}
+    task=pool[Math.floor(Math.random()*pool.length)];
+  }
+  timerTaskId=task.id;
+  timerSeconds=300;timerRunning=false;
+  document.getElementById('timer-task-ttl').textContent=task.title;
+  updateTimerDisplay();
+  document.getElementById('timer-start-btn').textContent='Старт';
+  document.getElementById('timer-overlay').style.display='flex';
+}
+function updateTimerDisplay(){
+  const m=Math.floor(timerSeconds/60);
+  const s=timerSeconds%60;
+  const el=document.getElementById('timer-display');
+  el.textContent=`${m}:${String(s).padStart(2,'0')}`;
+  el.className='timer-display'+(timerSeconds<=60?' urgent':'');
+}
+function timerToggle(){
+  if(timerRunning){
+    clearInterval(timerInterval);timerRunning=false;
+    document.getElementById('timer-start-btn').textContent='Продовжити';
+  } else {
+    timerRunning=true;
+    document.getElementById('timer-start-btn').textContent='Пауза';
+    timerInterval=setInterval(()=>{
+      if(timerSeconds<=0){
+        clearInterval(timerInterval);timerRunning=false;
+        if(navigator.vibrate)navigator.vibrate([200,100,200]);
+        document.getElementById('timer-start-btn').textContent='Час вийшов!';
+        return;
+      }
+      timerSeconds--;updateTimerDisplay();
+    },1000);
+  }
+}
+async function timerDone(){
+  clearInterval(timerInterval);timerRunning=false;
+  if(timerTaskId){
+    await sb.from('scanner_tasks').update({done:true,done_at:new Date().toISOString()}).eq('id',timerTaskId);
+    sync();
+  }
+  timerClose();
+}
+function timerClose(){
+  clearInterval(timerInterval);timerRunning=false;
+  document.getElementById('timer-overlay').style.display='none';
+}
+
+/* ── CTX TABS ── */
 document.getElementById('ctx-bar').addEventListener('click',e=>{
   const tab=e.target.closest('.ctx-tab');
   if(!tab)return;
@@ -610,57 +823,54 @@ document.getElementById('ctx-bar').addEventListener('click',e=>{
   render();
 });
 
-/* ── ADD BUTTON ── */
-document.getElementById('btn-add').addEventListener('click',()=>openMod(null));
+/* ── ADD BUTTONS ── */
+document.getElementById('btn-add')?.addEventListener('click',()=>openMod(null));
 
 /* ══════════════════════════════════════════════════
    DRAG & DROP
    Desktop: HTML5 drag API.
-   Mobile: Pointer Events з setPointerCapture().
-   
-   Таби контексту — drop targets для desktop і touch.
-   Колонки — drop targets для desktop і touch.
+   Mobile: Pointer Events + довге натискання (500ms)
+   щоб не конфліктувати зі скролом.
 ══════════════════════════════════════════════════ */
-let D={on:false,drag:false,id:null,ghost:null,tgt:null,x0:0,y0:0,lbl:''};
+let D={on:false,drag:false,id:null,ghost:null,tgt:null,x0:0,y0:0,lbl:'',holdTimer:null};
 
 function mkDrag(el,taskId,label){
-  /* Desktop */
   el.draggable=true;
-  el.ondragstart=e=>{
-    e.dataTransfer.setData('text',taskId);
-    e.dataTransfer.setData('tid',taskId);
-  };
+  el.ondragstart=e=>e.dataTransfer.setData('tid',taskId);
 
-  /* Mobile / touch — pointer events */
+  /* MOBILE: довге натискання 400ms → починаємо drag */
   el.addEventListener('pointerdown',e=>{
     if(e.pointerType==='mouse'||!e.isPrimary)return;
-    try{el.setPointerCapture(e.pointerId);}catch(_){}
-    if(D.ghost)D.ghost.remove();
-    if(D.tgt){D.tgt.classList.remove('dov');D.tgt=null;}
-    D={on:true,drag:false,id:taskId,ghost:null,tgt:null,x0:e.clientX,y0:e.clientY,lbl:label};
+    D.x0=e.clientX;D.y0=e.clientY;D.on=true;D.id=taskId;D.lbl=label;D.drag=false;
+    /* Таймер: якщо утримали 400ms без руху → починаємо drag */
+    D.holdTimer=setTimeout(()=>{
+      if(!D.on)return;
+      D.drag=true;
+      try{el.setPointerCapture(e.pointerId);}catch(_){}
+      el.classList.add('dragging');
+      const g=document.createElement('div');
+      g.className='drag-ghost';g.textContent=D.lbl;
+      g.style.left=D.x0+'px';g.style.top=D.y0+'px';
+      document.body.appendChild(g);D.ghost=g;
+      if(navigator.vibrate)navigator.vibrate(30);
+    },400);
   });
 
   el.addEventListener('pointermove',e=>{
     if(!D.on||e.pointerType==='mouse'||!e.isPrimary)return;
     const dx=e.clientX-D.x0,dy=e.clientY-D.y0;
-    if(Math.sqrt(dx*dx+dy*dy)<8)return;
-    e.preventDefault();
-    if(!D.drag){
-      D.drag=true;
-      const g=document.createElement('div');
-      g.className='drag-ghost';g.textContent=D.lbl;
-      g.style.left=e.clientX+'px';g.style.top=e.clientY+'px';
-      document.body.appendChild(g);D.ghost=g;
-      if(navigator.vibrate)navigator.vibrate(18);
+    /* Якщо рухнулись до початку drag → скасовуємо hold */
+    if(!D.drag&&Math.sqrt(dx*dx+dy*dy)>8){
+      clearTimeout(D.holdTimer);
+      D.on=false;return;
     }
+    if(!D.drag)return;
+    e.preventDefault();
     D.ghost.style.left=e.clientX+'px';
     D.ghost.style.top=e.clientY+'px';
-
-    /* Ціль під пальцем */
     D.ghost.style.visibility='hidden';
     const un=document.elementFromPoint(e.clientX,e.clientY);
     D.ghost.style.visibility='visible';
-
     const nc=un?.closest('.col[data-energy]');
     const nt2=un?.closest('.ctx-tab[data-ctx]');
     const newTgt=nc||nt2||null;
@@ -672,40 +882,40 @@ function mkDrag(el,taskId,label){
   },{passive:false});
 
   el.addEventListener('pointerup',async e=>{
-    if(!D.on||e.pointerType==='mouse'||!e.isPrimary)return;
-    try{el.releasePointerCapture(e.pointerId);}catch(_){}
-    D.ghost?.remove();
-    D.tgt?.classList.remove('dov');
+    clearTimeout(D.holdTimer);
+    el.classList.remove('dragging');
+    if(!D.on||e.pointerType==='mouse'||!e.isPrimary){D.on=false;return;}
+    D.ghost?.remove();D.tgt?.classList.remove('dov');
     if(D.drag&&D.id&&D.tgt){
+      e.preventDefault();
       const tgt=D.tgt;
       if(tgt.classList.contains('col')&&tgt.dataset.energy!==undefined){
-        /* Перетягнуто у колонку — змінюємо енергію */
-        const energy=tgt.dataset.energy||null;
-        await sb.from('scanner_tasks').update({context:activeCtx,energy}).eq('id',D.id);
+        await sb.from('scanner_tasks').update({context:activeCtx,energy:tgt.dataset.energy||'medium'}).eq('id',D.id);
         sync();
       } else if(tgt.classList.contains('ctx-tab')&&tgt.dataset.ctx){
-        /* Перетягнуто у таб — змінюємо контекст */
         await sb.from('scanner_tasks').update({context:tgt.dataset.ctx}).eq('id',D.id);
         sync();
       }
     }
-    D={on:false,drag:false,id:null,ghost:null,tgt:null,x0:0,y0:0,lbl:''};
+    D={on:false,drag:false,id:null,ghost:null,tgt:null,x0:0,y0:0,lbl:'',holdTimer:null};
   });
 
   el.addEventListener('pointercancel',()=>{
-    D.ghost?.remove();
-    D.tgt?.classList.remove('dov');
-    D={on:false,drag:false,id:null,ghost:null,tgt:null,x0:0,y0:0,lbl:''};
+    clearTimeout(D.holdTimer);
+    el.classList.remove('dragging');
+    D.ghost?.remove();D.tgt?.classList.remove('dov');
+    D={on:false,drag:false,id:null,ghost:null,tgt:null,x0:0,y0:0,lbl:'',holdTimer:null};
   });
 }
 
 /* Desktop drop на таби */
-document.querySelectorAll('.ctx-tab').forEach(tab=>{
+document.querySelectorAll('.ctx-tab[data-ctx]').forEach(tab=>{
+  if(tab.dataset.ctx==='museum')return;
   tab.addEventListener('dragover',e=>{e.preventDefault();tab.classList.add('dov');});
   tab.addEventListener('dragleave',()=>tab.classList.remove('dov'));
   tab.addEventListener('drop',async e=>{
     e.preventDefault();tab.classList.remove('dov');
-    const id=e.dataTransfer.getData('text')||e.dataTransfer.getData('tid');
+    const id=e.dataTransfer.getData('tid');
     if(id){await sb.from('scanner_tasks').update({context:tab.dataset.ctx}).eq('id',id);sync();}
   });
 });
@@ -713,26 +923,42 @@ document.querySelectorAll('.ctx-tab').forEach(tab=>{
 /* ── RENDER ── */
 function render(){
   const board=document.getElementById('board');
+  const museum=document.getElementById('museum-view');
+
+  if(activeCtx==='museum'){
+    board.style.display='none';
+    museum.style.display='block';
+    document.getElementById('ebar').style.display='none';
+    renderMuseum();
+    return;
+  }
+  board.style.display='flex';
+  museum.style.display='none';
+  document.getElementById('ebar').style.display='flex';
   board.innerHTML='';
 
-  let visible=tasks.filter(t=>!t.done);
-  if(energyFilter&&energyFilter!=='all')visible=visible.filter(t=>(t.energy||'medium')===energyFilter);
-  if(focusMode&&activeCtx==='today')visible=visible.filter(t=>t.kind==='task');
+  let visible=tasks.filter(t=>!t.done&&t.context===activeCtx);
+  if(energyFilter!=='all')visible=visible.filter(t=>(t.energy||'medium')===energyFilter);
+  if(projectFilter!=='all')visible=visible.filter(t=>t.project===projectFilter);
+  if(focusMode)visible=visible.filter(t=>t.kind==='task');
 
-  /* Inbox — одна колонка, без поділу по енергії */
   if(activeCtx==='inbox'){
-    const list=visible.filter(t=>t.context==='inbox');
     const doneList=tasks.filter(t=>t.done&&t.context==='inbox');
-    board.appendChild(buildCol('Вхідні','var(--muted)',null,list,doneList));
+    board.appendChild(buildCol('Вхідні','var(--muted)',null,visible,doneList));
   } else {
-    /* Інші контексти — три колонки по енергії */
     ENERGIES.forEach(en=>{
       if(energyFilter!=='all'&&energyFilter!==en.id)return;
-      const list=visible.filter(t=>t.context===activeCtx&&(t.energy||'medium')===en.id);
+      const list=visible.filter(t=>(t.energy||'medium')===en.id);
       const doneList=tasks.filter(t=>t.done&&t.context===activeCtx&&(t.energy||'medium')===en.id);
-      board.appendChild(buildCol(en.icon+' '+en.lbl,
-        en.id==='low'?'var(--e-low)':en.id==='medium'?'var(--e-med)':'var(--e-high)',
-        en.id,list,doneList));
+      const color=en.id==='low'?'var(--e-low)':en.id==='medium'?'var(--e-med)':'var(--e-high)';
+      board.appendChild(buildCol(en.icon+' '+en.lbl,color,en.id,list,doneList));
+    });
+  }
+
+  /* Focus mode підсвітка */
+  if(focusMode){
+    document.querySelectorAll('.tcard').forEach(c=>{
+      c.classList.toggle('focus-match',c.dataset.kind==='task');
     });
   }
 }
@@ -742,36 +968,28 @@ function buildCol(title,color,energy,list,doneList){
   col.className='col';
   if(energy!==null)col.dataset.energy=energy||'';
 
-  /* Desktop drag — drop на колонку */
   col.addEventListener('dragover',e=>e.preventDefault());
   col.addEventListener('drop',async e=>{
-    const id=e.dataTransfer.getData('text')||e.dataTransfer.getData('tid');
+    const id=e.dataTransfer.getData('tid');
     if(!id)return;
     const upd={context:activeCtx};
-    if(energy!==null)upd.energy=energy;
-    await sb.from('scanner_tasks').update(upd).eq('id',id);
-    sync();
+    if(energy!==null)upd.energy=energy||'medium';
+    await sb.from('scanner_tasks').update(upd).eq('id',id);sync();
   });
 
-  /* Заголовок */
   const head=document.createElement('div');head.className='col-head';
-  head.innerHTML=`
-    <div class="col-title">
-      <span class="col-dot" style="background:${color}"></span>${title}
-    </div>
+  head.innerHTML=`<div class="col-title"><span class="col-dot" style="background:${color}"></span>${title}</div>
     <span class="col-count">${list.length}</span>`;
   col.appendChild(head);
 
-  /* Тіло */
   const body=document.createElement('div');body.className='col-body';
   if(list.length===0){
-    body.innerHTML=`<div class="empty"><span style="font-size:1.4rem;opacity:.25">✓</span><span class="empty-lbl">Порожньо</span></div>`;
+    body.innerHTML=`<div class="empty"><span style="font-size:1.3rem;opacity:.22">✓</span><span class="empty-lbl">Порожньо</span></div>`;
   } else {
     list.forEach(t=>body.appendChild(mkCard(t,false)));
   }
   col.appendChild(body);
 
-  /* Швидкий ввід */
   const footer=document.createElement('div');footer.className='col-footer';
   const qi=document.createElement('input');
   qi.className='quick-inp';qi.placeholder='+ Швидко...';
@@ -780,13 +998,13 @@ function buildCol(title,color,energy,list,doneList){
     const user=(await sb.auth.getUser()).data.user;
     await sb.from('scanner_tasks').insert([{
       title:qi.value.trim(),context:activeCtx,
-      energy:energy||'medium',user_id:user.id
+      energy:energy||'medium',user_id:user.id,
+      project:projectFilter!=='all'?projectFilter:null
     }]);
     qi.value='';sync();
   });
   footer.appendChild(qi);col.appendChild(footer);
 
-  /* Завершені */
   if(doneList.length>0){
     const dr=document.createElement('div');dr.className='done-row';
     dr.innerHTML=`<span class="done-row-lbl">Завершені (${doneList.length})</span><span class="done-row-arr">▶</span>`;
@@ -798,38 +1016,33 @@ function buildCol(title,color,energy,list,doneList){
   return col;
 }
 
-function mkCard(t,isDoneSection){
+function mkCard(t,isDone){
   const age=(Date.now()-new Date(t.created_at))/86400000;
   const isStale=t.context==='inbox'&&age>3&&!t.done;
-
   const el=document.createElement('div');
   el.className='tcard'+(t.done?' done-card':'')+(isStale?' stale':'');
-  if(t.energy&&!t.done)el.dataset.e=t.energy;
+  if(t.energy&&!t.done)el.dataset.e=t.energy||'medium';
+  el.dataset.kind=t.kind||'task';
 
-  /* Рядок з чекбоксом і заголовком */
   const row=document.createElement('div');row.className='tc-row';
-
   const cb=document.createElement('div');cb.className='tc-cb';
   if(t.done)cb.textContent='✓';
   cb.addEventListener('click',e=>{e.stopPropagation();toggleDone(t);});
-
   const ttl=document.createElement('div');ttl.className='tc-title';
-  ttl.textContent=t.title;
-  if(isStale){const s=document.createElement('span');s.className='tc-stale';s.textContent=' 🕸️';ttl.appendChild(s);}
+  ttl.textContent=t.title+(isStale?' 🕸️':'');
+  row.appendChild(cb);row.appendChild(ttl);el.appendChild(row);
 
-  row.appendChild(cb);row.appendChild(ttl);
-  el.appendChild(row);
-
-  /* Мета */
   const meta=document.createElement('div');meta.className='tc-meta';
-  const ki=document.createElement('span');ki.className='tc-kind-icon';ki.textContent=kIcon(t.kind);
-  const kl=document.createElement('span');kl.textContent=(KINDS.find(k=>k.id===t.kind)?.lbl)||'Задача';
-  meta.appendChild(ki);meta.appendChild(kl);
-  if(t.note){const nl=document.createElement('span');nl.textContent='· '+t.note.slice(0,30)+(t.note.length>30?'…':'');meta.appendChild(nl);}
+  meta.innerHTML=`<span>${kIcon(t.kind||'task')} ${KINDS.find(k=>k.id===t.kind)?.lbl||'Задача'}</span>`;
+  if(t.project){
+    const pb=document.createElement('span');pb.className='tc-proj';pb.textContent=t.project;
+    meta.appendChild(pb);
+  }
+  if(t.note){const ns=document.createElement('span');ns.textContent='· '+t.note.slice(0,28)+(t.note.length>28?'…':'');meta.appendChild(ns);}
   el.appendChild(meta);
 
-  /* Кнопки переходу між контекстами */
   if(!t.done){
+    /* Кнопки переходу між контекстами */
     const ctxBtns=document.createElement('div');ctxBtns.className='tc-ctx-btns';
     Object.entries(CTXS).filter(([k])=>k!==t.context).forEach(([k,v])=>{
       const b=document.createElement('button');b.className='tc-ctx-btn';
@@ -837,16 +1050,57 @@ function mkCard(t,isDoneSection){
       b.addEventListener('click',ev=>{ev.stopPropagation();moveCtx(t,k);});
       ctxBtns.appendChild(b);
     });
+    /* Кнопка таймера прямо з картки */
+    const tb=document.createElement('button');tb.className='tc-ctx-btn';
+    tb.textContent='⏱ 5хв';tb.style.color='var(--accent)';tb.style.borderColor='var(--accent)';
+    tb.addEventListener('click',ev=>{ev.stopPropagation();startTimer(t);});
+    ctxBtns.appendChild(tb);
     el.appendChild(ctxBtns);
   }
 
-  /* Клік — відкрити модалку */
   el.addEventListener('click',()=>openMod(t));
-
-  /* Drag */
   if(!t.done)mkDrag(el,t.id,t.title);
-
   return el;
+}
+
+/* ── МУЗЕЙ УСПІХІВ ── */
+function renderMuseum(){
+  const view=document.getElementById('museum-view');
+  view.innerHTML='';
+  const done=tasks.filter(t=>t.done).sort((a,b)=>new Date(b.done_at)-new Date(a.done_at));
+  if(!done.length){
+    view.innerHTML=`<div class="museum-empty">🏛<br><br>Тут з'являться твої завершені задачі.<br>Перша перемога вже чекає.</div>`;
+    return;
+  }
+  /* Групуємо по місяцях */
+  const byMonth={};
+  done.forEach(t=>{
+    const d=new Date(t.done_at||t.created_at);
+    const key=`${d.getFullYear()}-${d.getMonth()}`;
+    if(!byMonth[key])byMonth[key]={year:d.getFullYear(),month:d.getMonth(),tasks:[]};
+    byMonth[key].tasks.push(t);
+  });
+  Object.values(byMonth).forEach(({year,month,tasks:mTasks})=>{
+    const sec=document.createElement('div');sec.className='museum-month';
+    const ttl=document.createElement('div');ttl.className='museum-month-ttl';
+    ttl.innerHTML=`${UA_MONTHS[month]} <span>${year} · ${mTasks.length} завершено</span>`;
+    sec.appendChild(ttl);
+    const grid=document.createElement('div');grid.className='museum-grid';
+    mTasks.forEach(t=>{
+      const d=new Date(t.done_at||t.created_at);
+      const card=document.createElement('div');card.className='museum-card';
+      card.innerHTML=`
+        <span class="museum-card-kind">${kIcon(t.kind||'task')}</span>
+        <span class="museum-card-ttl">${t.title}</span>
+        <span class="museum-card-date">${d.getDate()} ${UA_MONTHS[d.getMonth()].slice(0,3).toLowerCase()}</span>`;
+      /* Клік — відновити */
+      card.style.cursor='pointer';
+      card.title='Клік — повернути до активних';
+      card.onclick=()=>toggleDone(t);
+      grid.appendChild(card);
+    });
+    sec.appendChild(grid);view.appendChild(sec);
+  });
 }
 
 /* ── ACTIONS ── */
@@ -858,8 +1112,7 @@ async function toggleDone(t){
   sync();
 }
 async function moveCtx(t,ctx){
-  await sb.from('scanner_tasks').update({context:ctx}).eq('id',t.id);
-  sync();
+  await sb.from('scanner_tasks').update({context:ctx}).eq('id',t.id);sync();
 }
 
 /* ── MODAL ── */
@@ -867,46 +1120,51 @@ function openMod(t=null){
   editId=t?.id??null;
   const body=document.getElementById('mbody');
   document.getElementById('modal').style.display='flex';
-
   const knd=t?.kind||'task';
   const en=t?.energy||'medium';
-  const ctx=t?.context||activeCtx;
+  const ctx=t?.ctx||activeCtx;
   const done=t?.done||false;
+  const projs=getProjects();
+  const projOpts=['<option value="">— без проєкту —</option>',
+    ...projs.map(p=>`<option${t?.project===p?' selected':''}>${p}</option>`)].join('');
 
   body.innerHTML=`
     <div class="mttl">${t?'Редагувати':'Нова'} задача</div>
-
     <label class="ilbl">Назва</label>
     <input id="m-ttl" class="inp" value="${(t?.title||'').replace(/"/g,'&quot;')}" placeholder="Що зробити?">
-
     <label class="ilbl">Нотатка</label>
-    <textarea id="m-note" class="inp" placeholder="Деталі, посилання...">${t?.note||''}</textarea>
-
+    <textarea id="m-note" class="inp" placeholder="Деталі...">${t?.note||''}</textarea>
     <label class="ilbl">Тип</label>
     <div class="seg" id="seg-k">
       ${KINDS.map(k=>`<button type="button" class="seg-btn${knd===k.id?' on':''}" data-v="${k.id}" onclick="segSel('seg-k','m-kind',this)">
         <span class="si">${k.icon}</span>${k.lbl}</button>`).join('')}
     </div>
     <input type="hidden" id="m-kind" value="${knd}">
-
     <label class="ilbl">Енергія</label>
     <div class="seg" id="seg-e">
       ${ENERGIES.map(e=>`<button type="button" class="seg-btn${en===e.id?' on':''}" data-v="${e.id}" data-e="${e.id}" onclick="segSel('seg-e','m-energy',this)">
         <span class="si">${e.icon}</span>${e.lbl}</button>`).join('')}
     </div>
     <input type="hidden" id="m-energy" value="${en}">
-
-    <label class="ilbl">Контекст</label>
-    <select id="m-ctx" class="inp">
-      ${Object.entries(CTXS).map(([k,v])=>`<option value="${k}" ${ctx===k?'selected':''}>${v.lbl}</option>`).join('')}
-    </select>
-
+    <div class="form-row">
+      <div>
+        <label class="ilbl">Контекст</label>
+        <select id="m-ctx" class="inp">
+          ${Object.entries(CTXS).map(([k,v])=>`<option value="${k}"${(t?.context||activeCtx)===k?' selected':''}>${v.lbl}</option>`).join('')}
+        </select>
+      </div>
+      <div>
+        <label class="ilbl">Проєкт</label>
+        <div style="display:flex;gap:.35rem;">
+          <select id="m-proj" class="inp" style="margin-bottom:0;flex:1">${projOpts}</select>
+        </div>
+        <input id="m-proj-new" class="inp" style="margin-top:.35rem;font-size:.72rem;font-family:'JetBrains Mono',monospace;" placeholder="або новий...">
+      </div>
+    </div>
     ${t?`<label class="done-toggle-wrap">
       <input type="checkbox" id="m-done" ${done?'checked':''}>
-      <span class="dttrack"></span>
-      <span class="dtlbl">Завершено</span>
+      <span class="dttrack"></span><span class="dtlbl">Завершено</span>
     </label>`:''}
-
     <button class="pbtn" onclick="saveTask()">Зберегти</button>
     ${t?`<button class="delbtn" onclick="delTask('${t.id}')">Видалити задачу</button>`:''}
   `;
@@ -918,14 +1176,17 @@ function segSel(segId,hidId,btn){
   btn.classList.add('on');
   document.getElementById(hidId).value=btn.dataset.v;
 }
-
 function closeMod(){document.getElementById('modal').style.display='none';editId=null;}
-document.addEventListener('keydown',e=>{if(e.key==='Escape')closeMod();});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeMod();timerClose();}});
 
 async function saveTask(){
   const ttlEl=document.getElementById('m-ttl');
   if(!ttlEl?.value?.trim()){ttlEl?.focus();return;}
   const user=(await sb.auth.getUser()).data.user;
+  /* Проєкт: або з select, або новий введений */
+  const projNew=(document.getElementById('m-proj-new')?.value||'').trim();
+  const projSel=document.getElementById('m-proj')?.value||'';
+  const project=projNew||projSel||null;
   const done=document.getElementById('m-done')?.checked||false;
   const d={
     title:ttlEl.value.trim(),
@@ -933,7 +1194,7 @@ async function saveTask(){
     kind:document.getElementById('m-kind')?.value||'task',
     energy:document.getElementById('m-energy')?.value||'medium',
     context:document.getElementById('m-ctx')?.value||'inbox',
-    done,
+    project,done,
     done_at:done?new Date().toISOString():null,
     user_id:user.id,
   };
@@ -943,7 +1204,6 @@ async function saveTask(){
   if(error){alert('Помилка: '+error.message);return;}
   closeMod();sync();
 }
-
 async function delTask(id){
   if(!confirm('Видалити задачу?'))return;
   await sb.from('scanner_tasks').delete().eq('id',id);
