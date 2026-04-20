@@ -65,7 +65,7 @@ border:1px solid var(--border);width:100%;max-width:380px;}
 /* ── TOPBAR ── */
 .topbar{
   height:54px;min-height:54px;display:flex;align-items:center;
-  padding:0 1rem;gap:.8rem;
+  padding:0 1rem;gap:.6rem;
   border-bottom:1px solid var(--border);background:var(--bg);
   flex-shrink:0;z-index:300;
 }
@@ -73,8 +73,7 @@ border:1px solid var(--border);width:100%;max-width:380px;}
   font-family:'Literata',serif;font-size:1.15rem;font-weight:400;
   letter-spacing:-.02em;color:var(--text);
   display:flex;align-items:center;gap:.5rem;
-  background:none;cursor:pointer;min-width:0;
-  margin-right: auto;
+  background:none;cursor:pointer;flex:1;min-width:0;
 }
 .logo-btn span{color:var(--accent);font-style:italic;}
 .ibtn{
@@ -84,39 +83,49 @@ border:1px solid var(--border);width:100%;max-width:380px;}
   transition:border-color .15s,color .15s;touch-action:manipulation;
 }
 .ibtn:hover,.ibtn:active{border-color:var(--accent);color:var(--accent);}
-.ibtn svg{width:18px;height:18px;}
+.ibtn svg{width:17px;height:17px;}
 .ibtn.danger:hover,.ibtn.danger:active{border-color:var(--error);color:var(--error);}
+
+/* Стабільна висота для кнопок в хедері */
+.theme-btn, .hbtn {
+  height: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'JetBrains Mono', monospace;
+  cursor: pointer;
+  border-radius: 2px;
+  white-space: nowrap;
+  flex-shrink: 0;
+  touch-action: manipulation;
+  transition: all .15s;
+}
 .theme-btn{
   background:var(--accent-light);border:1px solid var(--accent);color:var(--accent);
-  font-size:.62rem;font-family:'JetBrains Mono',monospace;
-  cursor:pointer;padding:.32rem .65rem;border-radius:2px;
+  font-size:.62rem;
+  padding:0 .65rem;
   letter-spacing:.06em;text-transform:uppercase;
-  white-space:nowrap;flex-shrink:0;touch-action:manipulation;
 }
 .theme-btn:hover{opacity:.7;}
 .hbtn{
-  font-family:'JetBrains Mono',monospace;font-size:.58rem;
+  font-size:.58rem;
   letter-spacing:.05em;text-transform:uppercase;
   border:1px solid var(--border);color:var(--muted);
-  background:none;cursor:pointer;padding:.32rem .6rem;
-  border-radius:2px;white-space:nowrap;flex-shrink:0;
-  transition:all .15s;touch-action:manipulation;
+  background:none;
+  padding:0 .6rem;
 }
 .hbtn:hover{border-color:var(--accent);color:var(--accent);}
 .hbtn.on{background:var(--accent-light);border-color:var(--accent);color:var(--accent);}
 
-@media(max-width: 580px) {
-  .logo-btn { font-size: 1rem; }
-  .logo-btn svg { width: 22px; height: 22px; }
+@media(max-width: 480px) {
   #focus-btn {
     font-size: 0; 
-    padding: .4rem; 
-    width: 34px; height: 34px;
-    display: flex; align-items: center; justify-content: center;
+    width: 30px; 
+    padding: 0; 
   }
   #focus-btn::before {
     content: '🎯';
-    font-size: .9rem;
+    font-size: .8rem;
   }
 }
 
@@ -225,7 +234,7 @@ border:1px solid var(--border);width:100%;max-width:380px;}
 .sb-action-btn.museum-btn{background:none;border:1px solid var(--e-med);color:var(--e-med);}
 .sb-action-btn.museum-btn:hover{background:#fdf3e7;}
 
-/* ── CONTEXT TABS (тепер горизонтальні вгорі) ── */
+/* ── CONTEXT TABS ── */
 .ctx-bar{
   display:flex;align-items:stretch;
   border-bottom:1px solid var(--border);background:var(--bg);flex-shrink:0;
@@ -258,22 +267,32 @@ border:1px solid var(--border);width:100%;max-width:380px;}
 /* ── BOARD ── */
 #board{
   flex:1;display:flex;padding:1.2rem;gap:1rem;
-  overflow-x:auto;overflow-y:hidden;align-items:stretch;
+  overflow-x:auto;overflow-y:hidden;align-items:stretch; 
   scrollbar-width:thin;scrollbar-color:var(--border) transparent;
 }
 @media(max-width:700px){
-  #board{flex-direction:column;overflow-x:hidden;overflow-y:auto;padding:.9rem;gap:.8rem;align-items:stretch;}
+  #board{flex-direction:column;overflow-x:hidden;overflow-y:auto;padding:.9rem;gap:.8rem;}
 }
 
 /* ── COLUMN ── */
 .col{
-  flex:1;min-width:280px;
+  flex:1;min-width:260px;
   background:var(--surface);border:1px solid var(--border);border-radius:3px;
-  display:flex;flex-direction:column;height:100%;
+  display:flex;flex-direction:column;max-height:100%;
   transition:border-color .15s,background .15s;
 }
 .col.dov{border-color:var(--accent);background:var(--accent-light);}
-@media(max-width:700px){.col{flex:none;width:100%;min-width:0;height:auto;min-height:300px;}}
+@media(max-width:700px){.col{flex:none;width:100%;min-width:0;max-height:none;}}
+
+/* Someday Grid View (Інкубатор ідей) */
+.col.someday-grid .col-body {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: .6rem;
+  padding: .8rem;
+  align-content: start;
+}
+.col.someday-grid .tcard { margin-bottom: 0; }
 
 .col-head{
   display:flex;align-items:center;justify-content:space-between;
@@ -287,7 +306,16 @@ border:1px solid var(--border);width:100%;max-width:380px;}
 .col-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
 .col-count{font-family:'JetBrains Mono',monospace;font-size:.55rem;color:var(--muted);}
 .col-body{flex:1;overflow-y:auto;padding:.5rem;}
-.col-footer{padding:0;border-top:none;flex-shrink:0;}
+.col-footer{padding:.45rem .5rem;border-top:1px solid var(--border);flex-shrink:0;}
+.quick-inp{
+  width:100%;padding:.45rem .7rem;
+  background:var(--bg);color:var(--text);
+  border:1px solid var(--border);border-radius:2px;
+  font-family:'Literata',Georgia,serif;font-size:.9rem;font-weight:300;
+  transition:border-color .15s;
+}
+.quick-inp:focus{border-color:var(--accent);}
+.quick-inp::placeholder{color:var(--muted);}
 
 .done-row{
   display:flex;align-items:center;gap:.4rem;
@@ -363,15 +391,15 @@ border:1px solid var(--border);width:100%;max-width:380px;}
 .tc-ctx-btn:hover{border-color:var(--accent);color:var(--accent);}
 .tc-timer-btn{color:var(--accent);border-color:var(--accent);}
 
-/* Focus mode (оновлено) */
+/* Focus mode */
 body.focus-mode .tcard:not(.focus-match){
-  opacity:0.08;
+  opacity:0.15;
   pointer-events:none;
-  filter:blur(2px) grayscale(100%);
+  filter:blur(1px) grayscale(100%);
 }
 body.focus-mode .done-row,
 body.focus-mode .done-section {
-  display:none; /* Ховаємо завершені у фокусі */
+  display:none; 
 }
 
 /* ── МУЗЕЙ ── */
@@ -380,11 +408,12 @@ body.focus-mode .done-section {
 .museum-month-ttl{
   font-family:'Literata',serif;font-size:1.4rem;font-weight:300;
   letter-spacing:-.02em;color:var(--e-med);margin-bottom:.8rem;
-  display:flex;align-items:baseline;gap:.7rem;
+  display:flex;align-items:baseline;gap:.7rem;flex-wrap:wrap;
 }
 .museum-month-ttl small{
   font-family:'JetBrains Mono',monospace;font-size:.55rem;
   color:var(--muted);letter-spacing:.1em;text-transform:uppercase;font-weight:400;
+  background:var(--surface);padding:.2rem .5rem;border-radius:2px;border:1px solid var(--border);
 }
 .museum-card{
   background:var(--surface);border:1px solid var(--border);border-radius:3px;
@@ -433,7 +462,6 @@ body.focus-mode .done-section {
   margin-bottom:1.5rem;overflow:hidden;
 }
 .timer-progress-bar{height:100%;background:var(--accent);transition:width 1s linear;}
-/* Налаштування */
 .timer-settings{
   display:flex;align-items:center;justify-content:center;gap:.5rem;
   margin-bottom:1.5rem;flex-wrap:wrap;
@@ -464,51 +492,39 @@ body.focus-mode .done-section {
 .timer-btn:hover{border-color:var(--accent);color:var(--accent);}
 .timer-btn.primary:hover{opacity:.85;}
 
-/* ── FAB (Нова задача - оновлено) ── */
+/* ── FAB (Нова задача - квадратна, зелена, без тексту) ── */
 #fab {
   position: fixed;
-  bottom: 2rem;
-  left: 50%;
-  transform: translateX(-50%);
-  padding: .7rem 2rem;
-  border-radius: 2px;
-  background: var(--accent);
-  color: #fff;
-  border: 1px solid var(--accent);
-  font-family: 'JetBrains Mono', monospace;
-  font-size: .62rem;
-  font-weight: 500;
-  letter-spacing: .12em;
-  text-transform: uppercase;
+  bottom: 1.5rem;
+  right: 1.5rem;
+  width: 48px; 
+  height: 48px;
+  padding: 0;
+  border-radius: 2px; /* Маленьке заокруглення, як у всіх кнопок */
+  background: var(--accent); /* Зелений колір акценту */
+  color: #fff; /* Білий плюс */
+  border: none;
   cursor: pointer;
   z-index: 500;
   display: flex;
   align-items: center;
-  gap: .6rem;
-  box-shadow: 0 8px 24px rgba(0,0,0,.15);
-  transition: all .2s cubic-bezier(.4,0,.2,1);
+  justify-content: center;
+  box-shadow: 0 4px 18px rgba(0,0,0,.18);
+  transition: all .15s;
   touch-action: manipulation;
 }
 #fab::before {
-  content: '+';
-  font-size: 1.1rem;
+  content: '＋';
+  font-size: 1.8rem;
   line-height: 1;
-  font-weight: 300;
 }
 #fab:hover {
-  background: var(--accent-mid);
-  transform: translateX(-50%) translateY(-3px);
-  box-shadow: 0 12px 32px rgba(0,0,0,.22);
+  background: var(--accent-mid); /* Трохи інший відтінок при наведенні */
+  transform: translateY(-2px);
+  box-shadow: 0 6px 22px rgba(0,0,0,.22);
 }
 #fab:active {
-  transform: translateX(-50%) translateY(0);
-}
-@media(max-width: 480px) {
-  #fab {
-    bottom: 1.5rem;
-    width: calc(100% - 3rem);
-    justify-content: center;
-  }
+  transform: translateY(0);
 }
 
 /* ── MODAL ── */
@@ -574,12 +590,21 @@ select.inp{
 .dtlbl{font-family:'JetBrains Mono',monospace;font-size:.65rem;
   letter-spacing:.06em;text-transform:uppercase;color:var(--muted);}
 .pbtn{
-  width:100%;padding:.56rem 1rem;border-radius:2px;background:var(--accent);
+  padding:.56rem 1rem;border-radius:2px;background:var(--accent);
   color:#fff;font-family:'JetBrains Mono',monospace;font-size:.62rem;
   font-weight:500;letter-spacing:.08em;text-transform:uppercase;
-  cursor:pointer;border:none;transition:opacity .15s;touch-action:manipulation;
+  cursor:pointer;border:none;transition:all .15s;touch-action:manipulation;
 }
 .pbtn:hover{opacity:.85;}
+.pbtn.secondary {
+  background: var(--surface);
+  color: var(--muted);
+  border: 1px solid var(--border);
+}
+.pbtn.secondary:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
 .delbtn{font-family:'JetBrains Mono',monospace;font-size:.56rem;
   letter-spacing:.06em;text-transform:uppercase;color:var(--error);
   background:none;cursor:pointer;padding:0;
@@ -612,7 +637,7 @@ select.inp{
     <input type="email" id="email" class="inp" placeholder="email@example.com" style="margin-bottom:.8rem">
     <label class="ilbl">Пароль</label>
     <input type="password" id="pass" class="inp" placeholder="••••••••" style="margin-bottom:1.2rem">
-    <button class="pbtn" onclick="doLogin()">Увійти</button>
+    <button class="pbtn" style="width:100%" onclick="doLogin()">Увійти</button>
     <p id="auth-err" class="aerr"></p>
   </div>
 </div>
@@ -642,10 +667,8 @@ select.inp{
 
 <header class="topbar">
   <button class="ibtn" id="menu-btn" aria-label="Фільтри">
-    <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
-      <line x1="6" y1="9" x2="26" y2="9" />
-      <line x1="10" y1="16" x2="22" y2="16" />
-      <line x1="6" y1="23" x2="26" y2="23" />
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+      <path d="M3 12h18M3 6h18M3 18h18"/>
     </svg>
   </button>
   <button class="logo-btn" onclick="location.reload()">
@@ -685,6 +708,7 @@ select.inp{
   <button class="ctx-tab active" data-ctx="inbox">Вхідні<span class="badge" id="b-inbox">0</span></button>
   <button class="ctx-tab" data-ctx="today">Сьогодні<span class="badge" id="b-today">0</span></button>
   <button class="ctx-tab" data-ctx="waiting">Чекаю<span class="badge" id="b-waiting">0</span></button>
+  <button class="ctx-tab" data-ctx="icebox">🧊 Морозилка<span class="badge" id="b-icebox">0</span></button>
   <button class="ctx-tab" data-ctx="someday">Колись<span class="badge" id="b-someday">0</span></button>
 </nav>
 
@@ -737,11 +761,17 @@ select.inp{
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
         Нова задача
       </button>
+      <button class="sb-action-btn secondary" onclick="sbAction(runQuickWin)">
+        ⚡ Швидка перемога
+      </button>
       <button class="sb-action-btn secondary" onclick="sbAction(runRoulette)">
         🎲 Що зараз?
       </button>
       <button class="sb-action-btn secondary" onclick="sbAction(()=>startTimer(null))">
         🍅 Pomodoro
+      </button>
+      <button class="sb-action-btn secondary" onclick="sbAction(exportData)">
+        💾 Експорт JSON
       </button>
       <button class="sb-action-btn museum-btn" onclick="sbAction(()=>switchCtx('museum'))">
         🏛 Музей успіхів
@@ -755,7 +785,7 @@ select.inp{
   </div>
 </div>
 
-<button id="fab" onclick="openMod(null)" title="Нова задача">Нова задача</button>
+<button id="fab" onclick="openMod(null)" title="Нова задача"></button>
 
 <div id="modal" class="modal" onclick="if(event.target===this)closeMod()">
   <div class="mcard" id="mbody"></div>
@@ -772,12 +802,16 @@ let energyFilter='all';
 let projectFilter='all';
 let focusMode=false;
 let editId=null;
+
+// Оновлені контексти
 const CTXS={
   inbox:  {lbl:'Вхідні',   dot:'var(--muted)'},
   today:  {lbl:'Сьогодні', dot:'var(--accent)'},
   waiting:{lbl:'Чекаю',    dot:'var(--e-med)'},
+  icebox: {lbl:'Морозилка',dot:'var(--e-low)'}, // Новий контекст
   someday:{lbl:'Колись',   dot:'var(--muted)'},
 };
+
 const KINDS=[
   {id:'task',    icon:'☐', lbl:'Задача'},
   {id:'project', icon:'🎯',lbl:'Проєкт'},
@@ -947,11 +981,27 @@ function toggleFocus(){
   render();
 }
 
-/* ── ROULETTE ── */
+/* ── ROULETTE & QUICK WINS ── */
 function runRoulette(){
   const pool=tasks.filter(t=>t.context==='someday'&&!t.done);
   if(!pool.length){alert("Немає задач у 'Колись' для рулетки");return;}
   openMod(pool[Math.floor(Math.random()*pool.length)]);
+}
+
+function runQuickWin(){
+  // Беремо незавершені задачі з низькою енергією, крім тих що у "Морозилці" чи "Колись"
+  const pool=tasks.filter(t=>!t.done && t.energy==='low' && t.context!=='someday' && t.context!=='icebox');
+  if(!pool.length){alert("Зараз немає активних задач на низьку енергію. Зроби перерву!");return;}
+  openMod(pool[Math.floor(Math.random()*pool.length)]);
+}
+
+/* ── EXPORT DATA ── */
+function exportData(){
+  const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(tasks, null, 2));
+  const dlAnchorElem = document.createElement('a');
+  dlAnchorElem.setAttribute("href", dataStr);
+  dlAnchorElem.setAttribute("download", "scanner_tasks_backup.json");
+  dlAnchorElem.click();
 }
 
 /* ═══════════════════════════════════════════════
@@ -1116,7 +1166,16 @@ function render(){
   if(energyFilter!=='all')visible=visible.filter(t=>(t.energy||'medium')===energyFilter);
   if(projectFilter!=='all')visible=visible.filter(t=>t.project===projectFilter);
 
-  if(activeCtx==='inbox'){
+  if(activeCtx==='someday'){
+    const col = buildCol('💡 Ідеї та плани (Someday / Maybe)', 'var(--muted)', null, visible, []);
+    col.classList.add('someday-grid');
+    board.appendChild(col);
+  } else if (activeCtx==='icebox') {
+    // Рендер Морозилки
+    const col = buildCol('Заморожені проекти (На паузі)', 'var(--e-low)', null, visible, []);
+    col.classList.add('someday-grid'); // Морозилку теж зручно бачити сіткою
+    board.appendChild(col);
+  } else if(activeCtx==='inbox'){
     const done=tasks.filter(t=>t.done&&t.context==='inbox');
     board.appendChild(buildCol('Вхідні','var(--muted)',null,visible,done));
   } else {
@@ -1129,7 +1188,7 @@ function render(){
     });
   }
 
-  /* Focus mode (оновлено) */
+  /* Focus mode */
   if(focusMode){
     document.querySelectorAll('.tcard').forEach(c=>{
       const isDone = c.classList.contains('done-card');
@@ -1164,7 +1223,22 @@ function buildCol(title,color,energy,list,doneList){
     list.forEach(t=>body.appendChild(mkCard(t)));
   }
   col.appendChild(body);
-  
+  const footer=document.createElement('div');footer.className='col-footer';
+
+  const qi=document.createElement('input');
+  qi.className='quick-inp';qi.placeholder='+ Швидко (Enter)...';
+  qi.addEventListener('keydown',async ev=>{
+    if(ev.key!=='Enter'||!qi.value.trim())return;
+    const user=(await sb.auth.getUser()).data.user;
+    await sb.from('scanner_tasks').insert([{
+      title:qi.value.trim(),context:activeCtx,
+      energy:energy||'medium',user_id:user.id,
+      project:projectFilter!=='all'?projectFilter:null
+    }]);
+    qi.value='';sync();
+  });
+
+  footer.appendChild(qi);col.appendChild(footer);
   if(doneList.length){
     const dr=document.createElement('div');dr.className='done-row';
     dr.innerHTML=`<span class="done-row-lbl">Завершені (${doneList.length})</span><span class="done-row-arr">▶</span>`;
@@ -1218,7 +1292,7 @@ function mkCard(t,isDone=false){
   return el;
 }
 
-/* ── МУЗЕЙ ── */
+/* ── МУЗЕЙ (Variety Tracker) ── */
 function renderMuseum(){
   const view=document.getElementById('museum-view');
   view.innerHTML='';
@@ -1239,7 +1313,13 @@ function renderMuseum(){
   Object.values(byMonth).forEach(({year,month,tasks:mt})=>{
     const sec=document.createElement('div');sec.className='museum-month';
     const ttl=document.createElement('div');ttl.className='museum-month-ttl';
-    ttl.innerHTML=`${UA_MONTHS[month]} <small>${year} · ${mt.length} завершено</small>`;
+    
+    const uniqueProjects = new Set(mt.map(t => t.project).filter(Boolean));
+    const varietyCount = uniqueProjects.size;
+
+    ttl.innerHTML=`${UA_MONTHS[month]} 
+      <small>${year} · ${mt.length} завершено · ${varietyCount} сфер охоплено</small>`;
+    
     sec.appendChild(ttl);
     mt.forEach(t=>{
       const d=new Date(t.done_at||t.created_at);
@@ -1266,7 +1346,7 @@ async function moveCtx(t,ctx){
   await sb.from('scanner_tasks').update({context:ctx}).eq('id',t.id);sync();
 }
 
-/* ── MODAL ── */
+/* ── MODAL (ОНОВЛЕНО З КНОПКОЮ ВІДМІНИ) ── */
 function openMod(t=null){
   editId=t?.id??null;
   const body=document.getElementById('mbody');
@@ -1309,7 +1389,11 @@ function openMod(t=null){
     </div>
     ${t?`<label class="done-toggle-wrap"><input type="checkbox" id="m-done" ${t.done?'checked':''}>
       <span class="dttrack"></span><span class="dtlbl">Завершено</span></label>`:''}
-    <button class="pbtn" onclick="saveTask()">Зберегти</button>
+    
+    <div style="display:flex; gap:.5rem; margin-top:.75rem;">
+      <button class="pbtn" onclick="saveTask()" style="flex:2;">Зберегти</button>
+      <button class="pbtn secondary" onclick="closeMod()" style="flex:1;">Відмінити</button>
+    </div>
     ${t?`<button class="delbtn" onclick="delTask('${t.id}')">Видалити задачу</button>`:''}`;
   setTimeout(()=>document.getElementById('m-ttl')?.focus(),40);
 }
