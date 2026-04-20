@@ -85,21 +85,34 @@ border:1px solid var(--border);width:100%;max-width:380px;}
 .ibtn:hover,.ibtn:active{border-color:var(--accent);color:var(--accent);}
 .ibtn svg{width:17px;height:17px;}
 .ibtn.danger:hover,.ibtn.danger:active{border-color:var(--error);color:var(--error);}
+
+/* Стабільна висота для кнопок в хедері */
+.theme-btn, .hbtn {
+  height: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'JetBrains Mono', monospace;
+  cursor: pointer;
+  border-radius: 2px;
+  white-space: nowrap;
+  flex-shrink: 0;
+  touch-action: manipulation;
+  transition: all .15s;
+}
 .theme-btn{
   background:var(--accent-light);border:1px solid var(--accent);color:var(--accent);
-  font-size:.62rem;font-family:'JetBrains Mono',monospace;
-  cursor:pointer;padding:.32rem .65rem;border-radius:2px;
+  font-size:.62rem;
+  padding:0 .65rem;
   letter-spacing:.06em;text-transform:uppercase;
-  white-space:nowrap;flex-shrink:0;touch-action:manipulation;
 }
 .theme-btn:hover{opacity:.7;}
 .hbtn{
-  font-family:'JetBrains Mono',monospace;font-size:.58rem;
+  font-size:.58rem;
   letter-spacing:.05em;text-transform:uppercase;
   border:1px solid var(--border);color:var(--muted);
-  background:none;cursor:pointer;padding:.32rem .6rem;
-  border-radius:2px;white-space:nowrap;flex-shrink:0;
-  transition:all .15s;touch-action:manipulation;
+  background:none;
+  padding:0 .6rem;
 }
 .hbtn:hover{border-color:var(--accent);color:var(--accent);}
 .hbtn.on{background:var(--accent-light);border-color:var(--accent);color:var(--accent);}
@@ -107,7 +120,8 @@ border:1px solid var(--border);width:100%;max-width:380px;}
 @media(max-width: 480px) {
   #focus-btn {
     font-size: 0; 
-    padding: .4rem; 
+    width: 30px; /* Квадрат */
+    padding: 0; 
   }
   #focus-btn::before {
     content: '🎯';
@@ -220,7 +234,7 @@ border:1px solid var(--border);width:100%;max-width:380px;}
 .sb-action-btn.museum-btn{background:none;border:1px solid var(--e-med);color:var(--e-med);}
 .sb-action-btn.museum-btn:hover{background:#fdf3e7;}
 
-/* ── CONTEXT TABS (тепер горизонтальні вгорі) ── */
+/* ── CONTEXT TABS ── */
 .ctx-bar{
   display:flex;align-items:stretch;
   border-bottom:1px solid var(--border);background:var(--bg);flex-shrink:0;
@@ -253,7 +267,7 @@ border:1px solid var(--border);width:100%;max-width:380px;}
 /* ── BOARD ── */
 #board{
   flex:1;display:flex;padding:1.2rem;gap:1rem;
-  overflow-x:auto;overflow-y:hidden;align-items:stretch; /* Виправлено для розтягування */
+  overflow-x:auto;overflow-y:hidden;align-items:stretch; 
   scrollbar-width:thin;scrollbar-color:var(--border) transparent;
 }
 @media(max-width:700px){
@@ -269,6 +283,16 @@ border:1px solid var(--border);width:100%;max-width:380px;}
 }
 .col.dov{border-color:var(--accent);background:var(--accent-light);}
 @media(max-width:700px){.col{flex:none;width:100%;min-width:0;max-height:none;}}
+
+/* Someday Grid View (Інкубатор ідей) */
+.col.someday-grid .col-body {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: .6rem;
+  padding: .8rem;
+  align-content: start;
+}
+.col.someday-grid .tcard { margin-bottom: 0; }
 
 .col-head{
   display:flex;align-items:center;justify-content:space-between;
@@ -367,7 +391,7 @@ border:1px solid var(--border);width:100%;max-width:380px;}
 .tc-ctx-btn:hover{border-color:var(--accent);color:var(--accent);}
 .tc-timer-btn{color:var(--accent);border-color:var(--accent);}
 
-/* Focus mode (оновлено) */
+/* Focus mode */
 body.focus-mode .tcard:not(.focus-match){
   opacity:0.15;
   pointer-events:none;
@@ -375,7 +399,7 @@ body.focus-mode .tcard:not(.focus-match){
 }
 body.focus-mode .done-row,
 body.focus-mode .done-section {
-  display:none; /* Ховаємо завершені у фокусі */
+  display:none; 
 }
 
 /* ── МУЗЕЙ ── */
@@ -384,11 +408,12 @@ body.focus-mode .done-section {
 .museum-month-ttl{
   font-family:'Literata',serif;font-size:1.4rem;font-weight:300;
   letter-spacing:-.02em;color:var(--e-med);margin-bottom:.8rem;
-  display:flex;align-items:baseline;gap:.7rem;
+  display:flex;align-items:baseline;gap:.7rem;flex-wrap:wrap;
 }
 .museum-month-ttl small{
   font-family:'JetBrains Mono',monospace;font-size:.55rem;
   color:var(--muted);letter-spacing:.1em;text-transform:uppercase;font-weight:400;
+  background:var(--surface);padding:.2rem .5rem;border-radius:2px;border:1px solid var(--border);
 }
 .museum-card{
   background:var(--surface);border:1px solid var(--border);border-radius:3px;
@@ -437,7 +462,6 @@ body.focus-mode .done-section {
   margin-bottom:1.5rem;overflow:hidden;
 }
 .timer-progress-bar{height:100%;background:var(--accent);transition:width 1s linear;}
-/* Налаштування */
 .timer-settings{
   display:flex;align-items:center;justify-content:center;gap:.5rem;
   margin-bottom:1.5rem;flex-wrap:wrap;
@@ -468,33 +492,30 @@ body.focus-mode .done-section {
 .timer-btn:hover{border-color:var(--accent);color:var(--accent);}
 .timer-btn.primary:hover{opacity:.85;}
 
-/* ── FAB (Нова задача - оновлено) ── */
+/* ── FAB (Нова задача - квадратна, без тексту) ── */
 #fab {
   position: fixed;
   bottom: 1.5rem;
   right: 1.5rem;
-  padding: .75rem 1.4rem;
-  border-radius: 3px;
+  width: 48px; 
+  height: 48px;
+  padding: 0;
+  border-radius: 6px; /* Ледь заокруглені краї */
   background: var(--bg);
   color: var(--accent);
   border: 1px solid var(--accent);
-  font-family: 'JetBrains Mono', monospace;
-  font-size: .65rem;
-  font-weight: 500;
-  letter-spacing: .08em;
-  text-transform: uppercase;
   cursor: pointer;
   z-index: 500;
   display: flex;
   align-items: center;
-  gap: .5rem;
+  justify-content: center;
   box-shadow: 0 4px 18px rgba(0,0,0,.12);
   transition: all .15s;
   touch-action: manipulation;
 }
 #fab::before {
   content: '＋';
-  font-size: 1.1rem;
+  font-size: 1.8rem;
   line-height: 1;
 }
 #fab:hover {
@@ -736,6 +757,9 @@ select.inp{
       <button class="sb-action-btn secondary" onclick="sbAction(()=>startTimer(null))">
         🍅 Pomodoro
       </button>
+      <button class="sb-action-btn secondary" onclick="sbAction(exportData)">
+        💾 Експорт JSON
+      </button>
       <button class="sb-action-btn museum-btn" onclick="sbAction(()=>switchCtx('museum'))">
         🏛 Музей успіхів
       </button>
@@ -748,7 +772,7 @@ select.inp{
   </div>
 </div>
 
-<button id="fab" onclick="openMod(null)" title="Нова задача">Нова задача</button>
+<button id="fab" onclick="openMod(null)" title="Нова задача"></button>
 
 <div id="modal" class="modal" onclick="if(event.target===this)closeMod()">
   <div class="mcard" id="mbody"></div>
@@ -947,6 +971,15 @@ function runRoulette(){
   openMod(pool[Math.floor(Math.random()*pool.length)]);
 }
 
+/* ── EXPORT DATA ── */
+function exportData(){
+  const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(tasks, null, 2));
+  const dlAnchorElem = document.createElement('a');
+  dlAnchorElem.setAttribute("href", dataStr);
+  dlAnchorElem.setAttribute("download", "scanner_tasks_backup.json");
+  dlAnchorElem.click();
+}
+
 /* ═══════════════════════════════════════════════
    POMODORO TIMER
 ═══════════════════════════════════════════════ */
@@ -1109,7 +1142,12 @@ function render(){
   if(energyFilter!=='all')visible=visible.filter(t=>(t.energy||'medium')===energyFilter);
   if(projectFilter!=='all')visible=visible.filter(t=>t.project===projectFilter);
 
-  if(activeCtx==='inbox'){
+  // Інкубатор ідей: "Колись" відображається у вигляді сітки/мудборду
+  if(activeCtx==='someday'){
+    const col = buildCol('💡 Ідеї та плани (Someday / Maybe)', 'var(--muted)', null, visible, []);
+    col.classList.add('someday-grid');
+    board.appendChild(col);
+  } else if(activeCtx==='inbox'){
     const done=tasks.filter(t=>t.done&&t.context==='inbox');
     board.appendChild(buildCol('Вхідні','var(--muted)',null,visible,done));
   } else {
@@ -1122,7 +1160,7 @@ function render(){
     });
   }
 
-  /* Focus mode (оновлено) */
+  /* Focus mode */
   if(focusMode){
     document.querySelectorAll('.tcard').forEach(c=>{
       const isDone = c.classList.contains('done-card');
@@ -1226,7 +1264,7 @@ function mkCard(t,isDone=false){
   return el;
 }
 
-/* ── МУЗЕЙ ── */
+/* ── МУЗЕЙ (Variety Tracker) ── */
 function renderMuseum(){
   const view=document.getElementById('museum-view');
   view.innerHTML='';
@@ -1247,7 +1285,14 @@ function renderMuseum(){
   Object.values(byMonth).forEach(({year,month,tasks:mt})=>{
     const sec=document.createElement('div');sec.className='museum-month';
     const ttl=document.createElement('div');ttl.className='museum-month-ttl';
-    ttl.innerHTML=`${UA_MONTHS[month]} <small>${year} · ${mt.length} завершено</small>`;
+    
+    // Variety Tracker: Рахуємо кількість унікальних сфер (проєктів) за місяць
+    const uniqueProjects = new Set(mt.map(t => t.project).filter(Boolean));
+    const varietyCount = uniqueProjects.size;
+
+    ttl.innerHTML=`${UA_MONTHS[month]} 
+      <small>${year} · ${mt.length} завершено · ${varietyCount} сфер охоплено</small>`;
+    
     sec.appendChild(ttl);
     mt.forEach(t=>{
       const d=new Date(t.done_at||t.created_at);
