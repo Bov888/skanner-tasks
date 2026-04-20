@@ -3,441 +3,383 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>ScannerTasks 2.0</title>
+<title>ScannerPlanner 2.0</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Literata:ital,wght@0,300;0,400;0,500;1,300&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
-/* Код стилів розширено для нових функцій: 
-  - Idea style
-  - Panic mode
-  - Backstage projects
-  - Minimal FAB
-*/
-
-:root{
-  --bg:#fafaf8;--surface:#f4f3ef;--surface2:#eceae4;--border:#e2e1db;
-  --text:#1a1917;--muted:#6b6963;
-  --accent:#2d5a27;--accent-light:#e8f0e6;--accent-mid:#4a8a42;
-  --error:#8b2010;
-  --e-low:#6b8f71;--e-med:#b07d3a;--e-high:#8b2010;
-  --sw:280px;
-}
-[data-theme=dark]{
-  --bg:#141412;--surface:#1e1d1b;--surface2:#252422;--border:#2e2d2a;
-  --text:#e8e6e0;--muted:#8a8880;
-  --accent:#6ab05f;--accent-light:#1e2e1c;--accent-mid:#4a8a42;
-  --error:#e05040;
-  --e-low:#4a8a42;--e-med:#c9903e;--e-high:#e05040;
+:root {
+  --bg: #fafaf8; --surface: #f4f3ef; --surface2: #eceae4; --border: #e2e1db;
+  --text: #1a1917; --muted: #6b6963;
+  --accent: #2d5a27; --accent-light: #e8f0e6; --accent-mid: #4a8a42;
+  --error: #8b2010;
+  --e-low: #6b8f71; --e-med: #b07d3a; --e-high: #8b2010;
+  --sidebar-w: 280px;
 }
 
-*{margin:0;padding:0;box-sizing:border-box;border:none;outline:none;}
-html{font-size:17px;} 
-body{
-  background:var(--bg);color:var(--text);
-  font-family:'Literata',Georgia,serif;font-weight:300;
-  height:100vh;height:100dvh;overflow:hidden;
-  display:flex;flex-direction:column;transition:background .3s;
+[data-theme=dark] {
+  --bg: #141412; --surface: #1e1d1b; --surface2: #252422; --border: #2e2d2a;
+  --text: #e8e6e0; --muted: #8a8880;
+  --accent: #6ab05f; --accent-light: #1e2e1c; --accent-mid: #4a8a42;
+  --error: #e05040;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+body {
+  background: var(--bg); color: var(--text);
+  font-family: 'Literata', Georgia, serif; font-weight: 300;
+  height: 100dvh; overflow: hidden;
+  display: flex; flex-direction: column;
 }
 
 /* ── AUTH ── */
-#auth-gate{position:fixed;inset:0;background:var(--bg);z-index:9000;display:none;align-items:center;justify-content:center;padding:1.5rem;}
-.auth-card{background:var(--surface);padding:2.5rem;border-radius:3px;border:1px solid var(--border);width:100%;max-width:380px;}
+#auth-gate { position: fixed; inset: 0; background: var(--bg); z-index: 9999; display: none; align-items: center; justify-content: center; padding: 1rem; }
+.auth-card { background: var(--surface); padding: 2rem; border: 1px solid var(--border); width: 100%; max-width: 360px; }
 
-/* ── TOPBAR ── */
-.topbar{height:54px;display:flex;align-items:center;padding:0 1rem;gap:.6rem;border-bottom:1px solid var(--border);background:var(--bg);z-index:300;}
-.logo-btn{font-family:'Literata',serif;font-size:1.15rem;font-weight:400;color:var(--text);display:flex;align-items:center;gap:.5rem;background:none;cursor:pointer;flex:1;}
-.logo-btn span{color:var(--accent);font-style:italic;}
+/* ── HEADER ── */
+.topbar {
+  height: 60px; display: flex; align-items: center; padding: 0 1rem; gap: 0.5rem;
+  border-bottom: 1px solid var(--border); background: var(--bg); z-index: 1000;
+}
+.logo { font-size: 1.1rem; font-weight: 400; flex: 1; cursor: default; }
+.logo span { color: var(--accent); font-style: italic; }
 
-.ibtn{background:none;border:1px solid var(--border);color:var(--muted);cursor:pointer;display:flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:2px;flex-shrink:0;transition:all .15s;}
-.ibtn:hover{border-color:var(--accent);color:var(--accent);}
-.ibtn.panic-on{background:var(--error);color:#fff;border-color:var(--error);animation:pulse 1.5s infinite;}
-@keyframes pulse {0%{opacity:1} 50%{opacity:0.7} 100%{opacity:1}}
+.ibtn {
+  background: none; border: 1px solid var(--border); color: var(--muted);
+  width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;
+  border-radius: 4px; cursor: pointer; transition: 0.2s; flex-shrink: 0;
+}
+.ibtn:active { transform: scale(0.95); background: var(--surface); }
+.ibtn.panic-on { background: var(--error); color: #fff; border-color: var(--error); animation: pulse 1.5s infinite; }
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
 
-/* ── LAYOUT ── */
-.app-body{flex:1;display:flex;overflow:hidden;position:relative;}
-#sidebar{width:var(--sw);background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow-y:auto;transition:transform .25s cubic-bezier(.4,0,.2,1);}
+/* ── SIDEBAR & OVERLAY ── */
+#sidebar {
+  position: fixed; top: 0; left: 0; bottom: 0; width: var(--sidebar-w);
+  background: var(--surface); border-right: 1px solid var(--border);
+  z-index: 2000; transform: translateX(-100%); transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex; flex-direction: column; padding-top: 60px;
+}
+body.sb-open #sidebar { transform: translateX(0); }
 
-/* ── CHIPS ── */
-.sb-chip{font-family:'JetBrains Mono',monospace;font-size:.62rem;border:1px solid var(--border);color:var(--muted);padding:.38rem .7rem;border-radius:2px;cursor:pointer;background:none;display:flex;align-items:center;gap:.5rem;width:100%;text-align:left;margin-bottom:4px;}
-.sb-chip.on{background:var(--accent-light);border-color:var(--accent);color:var(--accent);}
-.sb-chip.backstage{opacity:0.4;filter:grayscale(1);}
-.chip-toggle{margin-left:auto;opacity:0.3;transition:opacity .2s;}
-.sb-chip:hover .chip-toggle{opacity:1;}
+#overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.4); backdrop-filter: blur(2px);
+  z-index: 1500; display: none; opacity: 0; transition: opacity 0.3s;
+}
+body.sb-open #overlay { display: block; opacity: 1; }
 
-/* ── BOARD ── */
-#board{flex:1;display:flex;padding:1.2rem;gap:1rem;overflow-x:auto;scrollbar-width:thin;}
-.col{flex:1;min-width:280px;background:var(--surface);border:1px solid var(--border);border-radius:3px;display:flex;flex-direction:column;max-height:100%;}
-.col-head{padding:.7rem 1rem;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;}
-.col-body{flex:1;overflow-y:auto;padding:.5rem;display:flex;flex-direction:column;gap:0.5rem;}
-.col-footer{padding:.5rem;border-top:1px solid var(--border);}
+/* ── CONTENT AREA ── */
+.app-body { flex: 1; display: flex; flex-direction: column; overflow: hidden; position: relative; }
 
-/* ── TASK CARDS ── */
-.tcard{background:var(--bg);border:1px solid var(--border);border-radius:3px;padding:.8rem;cursor:pointer;position:relative;transition:all .2s;}
-.tcard:hover{border-color:var(--accent-mid);transform:translateY(-1px);}
-.tcard::before{content:'';position:absolute;left:0;top:4px;bottom:4px;width:3px;border-radius:0 2px 2px 0;background:var(--border);}
-.tcard[data-e=low]::before{background:var(--e-low);}
-.tcard[data-e=medium]::before{background:var(--e-med);}
-.tcard[data-e=high]::before{background:var(--e-high);}
-.tcard[data-kind=idea]{border-style:dashed;background:var(--accent-light);opacity:0.9;}
+.ctx-tabs {
+  display: flex; border-bottom: 1px solid var(--border); background: var(--bg);
+  overflow-x: auto; scrollbar-width: none;
+}
+.ctx-tabs::-webkit-scrollbar { display: none; }
+.ctx-tab {
+  flex: 1; min-width: 100px; padding: 1rem 0.5rem; background: none; border: none;
+  font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--muted);
+  cursor: pointer; text-align: center; border-bottom: 2px solid transparent;
+}
+.ctx-tab.active { color: var(--accent); border-bottom-color: var(--accent); font-weight: 500; }
 
-.tc-row{display:flex;gap:.6rem;}
-.tc-cb{width:19px;height:19px;border:1px solid var(--border);border-radius:2px;display:flex;align-items:center;justify-content:center;flex-shrink:0;cursor:pointer;font-size:.7rem;}
-.tcard.done-card{opacity:0.5;}
-.tcard.done-card .tc-cb{background:var(--accent);color:#fff;border-color:var(--accent);}
-.tc-title{font-size:.95rem;line-height:1.4;flex:1;}
-.tc-meta{font-family:'JetBrains Mono',monospace;font-size:.52rem;color:var(--muted);margin-top:4px;display:flex;gap:6px;}
+#board {
+  flex: 1; display: flex; overflow-x: auto; padding: 1rem; gap: 1rem;
+  scroll-snap-type: x mandatory;
+}
+.col {
+  flex: 0 0 85%; scroll-snap-align: center;
+  background: var(--surface); border: 1px solid var(--border); border-radius: 6px;
+  display: flex; flex-direction: column; max-height: 100%;
+}
+@media (min-width: 768px) {
+  .col { flex: 1; min-width: 300px; scroll-snap-align: unset; }
+}
 
-/* ── PANIC MODE ── */
-body.panic-mode .tcard:not(.panic-target){display:none;}
-body.panic-mode .col-footer, body.panic-mode .ctx-bar{display:none;}
+.col-head { padding: 0.8rem 1rem; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem; font-weight: 500; }
+.col-body { flex: 1; overflow-y: auto; padding: 0.7rem; display: flex; flex-direction: column; gap: 0.6rem; }
+.col-footer { padding: 0.7rem; border-top: 1px solid var(--border); }
+
+/* ── CARDS ── */
+.tcard {
+  background: var(--bg); border: 1px solid var(--border); padding: 1rem; border-radius: 4px;
+  display: flex; flex-direction: column; gap: 0.5rem; position: relative;
+}
+.tcard[data-e=low] { border-left: 4px solid var(--e-low); }
+.tcard[data-e=medium] { border-left: 4px solid var(--e-med); }
+.tcard[data-e=high] { border-left: 4px solid var(--e-high); }
+.tcard.done { opacity: 0.5; }
+
+.tc-main { display: flex; gap: 0.8rem; align-items: flex-start; }
+.tc-check { 
+  width: 22px; height: 22px; border: 1px solid var(--border); border-radius: 4px; 
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0; cursor: pointer;
+}
+.done .tc-check { background: var(--accent); color: #fff; border-color: var(--accent); }
+.tc-title { font-size: 0.95rem; line-height: 1.4; flex: 1; }
+.tc-meta { font-family: 'JetBrains Mono', monospace; font-size: 0.6rem; color: var(--muted); display: flex; gap: 8px; flex-wrap: wrap; }
 
 /* ── FAB ── */
 #fab {
-  position:fixed;bottom:1.5rem;right:1.5rem;width:52px;height:52px;border-radius:50%;
-  background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;
-  box-shadow:0 6px 16px rgba(0,0,0,0.2);cursor:pointer;z-index:500;transition:transform .2s;
+  position: fixed; bottom: 1.5rem; right: 1.5rem; width: 56px; height: 56px;
+  background: var(--accent); color: #fff; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.2); z-index: 1000; cursor: pointer;
 }
-#fab:hover{transform:scale(1.1) rotate(90deg);}
-#fab::after{content:'+';font-size:24px;font-family:'JetBrains Mono',monospace;}
+#fab::after { content: '+'; font-size: 30px; }
 
-/* ── MODAL ── */
-.modal{position:fixed;inset:0;background:rgba(0,0,0,0.5);backdrop-filter:blur(4px);z-index:8000;display:none;align-items:center;justify-content:center;padding:1rem;}
-.mcard{background:var(--bg);padding:1.5rem;border-radius:4px;width:100%;max-width:440px;max-height:90vh;overflow-y:auto;}
-.inp, .seg-btn, .pbtn{width:100%;padding:.6rem;margin-bottom:.8rem;border:1px solid var(--border);border-radius:2px;background:var(--surface);font-family:inherit;}
-.pbtn{background:var(--accent);color:#fff;cursor:pointer;}
+/* ── UI HELPERS ── */
+.inp { width: 100%; padding: 0.8rem; background: var(--bg); border: 1px solid var(--border); border-radius: 4px; font-family: inherit; font-size: 0.9rem; }
+.sb-item { padding: 0.8rem 1rem; border-bottom: 1px solid var(--border); cursor: pointer; display: flex; justify-content: space-between; font-size: 0.9rem; }
+.sb-item.active { background: var(--accent-light); color: var(--accent); }
 
-/* Custom styles for Sprout button */
-.sprout-btn{background:var(--accent-light);color:var(--accent);border:1px solid var(--accent);font-family:'JetBrains Mono',monospace;font-size:.55rem;padding:2px 6px;border-radius:2px;cursor:pointer;margin-top:5px;display:inline-block;}
+/* MODAL */
+.modal { position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 5000; display: none; align-items: center; justify-content: center; padding: 1rem; }
+.m-content { background: var(--bg); width: 100%; max-width: 400px; padding: 1.5rem; border-radius: 8px; display: flex; flex-direction: column; gap: 1rem; }
 
+/* PANIC MODE */
+body.panic .tcard:not(.panic-target) { display: none; }
 </style>
 </head>
-<body data-sc>
+<body>
 
 <div id="auth-gate">
   <div class="auth-card">
-    <h2 style="margin-bottom:1rem">ScannerTasks 2.0</h2>
-    <input type="email" id="email" class="inp" placeholder="Email">
-    <input type="password" id="pass" class="inp" placeholder="Password">
-    <button class="pbtn" onclick="doLogin()">Увійти</button>
+    <h2 style="margin-bottom:1.5rem">Вхід у ScannerPlanner</h2>
+    <input type="email" id="email" class="inp" placeholder="Email" style="margin-bottom:1rem">
+    <input type="password" id="pass" class="inp" placeholder="Пароль" style="margin-bottom:1.5rem">
+    <button class="inp" style="background:var(--accent); color:#fff; border:none; font-weight:500" onclick="doLogin()">Увійти</button>
   </div>
 </div>
+
+<div id="overlay" onclick="toggleSB()"></div>
 
 <header class="topbar">
   <button class="ibtn" onclick="toggleSB()">☰</button>
-  <div class="logo-btn">Scanner<span>Tasks</span></div>
-  <button class="ibtn" id="panic-btn" onclick="togglePanic()" title="Режим Паніки: залишити лише 3 задачі">🆘</button>
-  <button class="ibtn" onclick="runGraveyard()" title="Поховати старі задачі з Inbox">👻</button>
+  <div class="logo">Scanner<span>Planner</span></div>
+  <button class="ibtn" id="panic-btn" onclick="togglePanic()" title="Panic Mode">🆘</button>
   <button class="ibtn" onclick="toggleTheme()">☾</button>
-  <button class="ibtn danger" onclick="sb.auth.signOut()">⏻</button>
 </header>
 
-<nav class="ctx-bar" id="ctx-bar" style="display:flex; background:var(--bg); border-bottom:1px solid var(--border); overflow-x:auto;">
-  <button class="ctx-tab active" data-ctx="inbox" style="padding:1rem; flex:1; background:none; cursor:pointer; font-family:'JetBrains Mono',monospace; font-size:.65rem;">ВХІДНІ <span id="b-inbox">0</span></button>
-  <button class="ctx-tab" data-ctx="today" style="padding:1rem; flex:1; background:none; cursor:pointer; font-family:'JetBrains Mono',monospace; font-size:.65rem;">СЬОГОДНІ <span id="b-today">0</span></button>
-  <button class="ctx-tab" data-ctx="someday" style="padding:1rem; flex:1; background:none; cursor:pointer; font-family:'JetBrains Mono',monospace; font-size:.65rem;">КОЛИСЬ <span id="b-someday">0</span></button>
-</nav>
-
 <div class="app-body">
-  <aside id="sidebar">
-    <div style="padding:1rem">
-      <p style="font-family:'JetBrains Mono',monospace; font-size:.55rem; color:var(--muted); margin-bottom:.5rem;">ЕНЕРГІЯ</p>
-      <div id="e-chips">
-        <button class="sb-chip on" data-e="all" onclick="setEFilter('all')">Всі</button>
-        <button class="sb-chip" data-e="low" onclick="setEFilter('low')">🌿 Низька</button>
-        <button class="sb-chip" data-e="medium" onclick="setEFilter('medium')">⚡ Середня</button>
-        <button class="sb-chip" data-e="high" onclick="setEFilter('high')">🔥 Висока</button>
-      </div>
-      <p style="font-family:'JetBrains Mono',monospace; font-size:.55rem; color:var(--muted); margin-top:1.5rem; margin-bottom:.5rem;">ПРОЄКТИ</p>
-      <div id="p-chips"></div>
-      <button class="sb-chip" style="border-style:dashed; margin-top:1rem;" onclick="promptNewProject()">+ Новий проєкт</button>
-    </div>
-  </aside>
+  <nav class="ctx-tabs">
+    <button class="ctx-tab active" data-ctx="inbox" onclick="setCtx('inbox')">ВХІДНІ (<span id="count-inbox">0</span>)</button>
+    <button class="ctx-tab" data-ctx="today" onclick="setCtx('today')">СЬОГОДНІ (<span id="count-today">0</span>)</button>
+    <button class="ctx-tab" data-ctx="someday" onclick="setCtx('someday')">КОЛИСЬ (<span id="count-someday">0</span>)</button>
+  </nav>
 
-  <div id="main-area" style="flex:1; display:flex; flex-direction:column; overflow:hidden;">
-    <div id="board"></div>
-  </div>
+  <div id="board"></div>
 </div>
 
-<div id="fab" onclick="openMod()"></div>
+<aside id="sidebar">
+  <div style="padding:1.5rem">
+    <p style="font-size:0.7rem; color:var(--muted); letter-spacing:1px; margin-bottom:1rem">ПРОЄКТИ</p>
+    <div id="project-list"></div>
+    <button class="sb-item" style="border:1px dashed var(--border); margin-top:1rem; justify-content:center" onclick="addProject()">+ Новий проєкт</button>
+  </div>
+</aside>
+
+<div id="fab" onclick="openEdit()"></div>
 
 <div id="modal" class="modal" onclick="if(event.target===this)closeMod()">
-  <div class="mcard" id="mbody"></div>
+  <div class="m-content" id="m-body"></div>
 </div>
 
 <script>
-// ВАШІ КЛЮЧІ
 const SB_URL="https://mlkdphygsdfcanztbtez.supabase.co";
 const SB_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1sa2RwaHlnc2RmY2FuenRidGV6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYyODAwNTAsImV4cCI6MjA5MTg1NjA1MH0.PfjkZXua-9tp2lxVsBD3YBUNpx_USmMha5BQBZcGLFc";
-const sb=supabase.createClient(SB_URL,SB_KEY);
+const sb = supabase.createClient(SB_URL, SB_KEY);
 
-let tasks=[];
-let activeCtx='inbox';
-let energyFilter='all';
-let projectFilter='all';
-let backstageProjects = new Set(JSON.parse(localStorage.getItem('backstage')) || []);
-let panicMode = false;
+let tasks = [];
+let curCtx = 'inbox';
+let curProj = 'all';
+let isPanic = false;
 
-const ENERGIES = {low:'🌿', medium:'⚡', high:'🔥'};
-const KINDS = {task:'☐ Задача', idea:'💡 Ідея', project:'🎯 Проєкт'};
+const ENERGIES = { low: '🌿 Низька', medium: '⚡ Середня', high: '🔥 Висока' };
 
-/* ── ПАРСИНГ ТЕКСТУ ── */
-function parseQuickEntry(input) {
-  let title = input;
-  let project = null;
-  let energy = 'medium';
-  let kind = 'task';
-
-  // Parse #project
-  const pMatch = title.match(/#(\S+)/);
-  if(pMatch) { project = pMatch[1]; title = title.replace(pMatch[0], ''); }
-
-  // Parse !energy
-  if(title.includes('!high')) { energy = 'high'; title = title.replace('!high', ''); }
-  else if(title.includes('!low')) { energy = 'low'; title = title.replace('!low', ''); }
-  else if(title.includes('!med')) { energy = 'medium'; title = title.replace('!med', ''); }
-
-  // Parse type ?? for idea
-  if(title.includes('??')) { kind = 'idea'; title = title.replace('??', ''); }
-
-  return { title: title.trim(), project, energy, kind };
+// ── СИСТЕМНІ ФУНКЦІЇ ──
+function toggleSB() {
+  document.body.classList.toggle('sb-open');
 }
 
-/* ── АВТО-АРХІВ (GRAVEYARD) ── */
-async function runGraveyard() {
-  const sevenDaysAgo = new Date();
-  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-
-  const staleTasks = tasks.filter(t => t.context === 'inbox' && !t.done && new Date(t.created_at) < sevenDaysAgo);
-  
-  if(staleTasks.length === 0) { alert("Inbox чистий!"); return; }
-  
-  if(confirm(`Поховати ${staleTasks.length} старих задач у "Колись"?`)) {
-    for(let t of staleTasks) {
-      await sb.from('scanner_tasks').update({context: 'someday'}).eq('id', t.id);
-    }
-    sync();
-  }
+function toggleTheme() {
+  const t = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
+  document.documentElement.dataset.theme = t;
 }
 
-/* ── РЕЖИМ ПАНІКИ ── */
-function togglePanic() {
-  panicMode = !panicMode;
-  document.body.classList.toggle('panic-mode', panicMode);
-  document.getElementById('panic-btn').classList.toggle('panic-on', panicMode);
-  
-  if(panicMode) {
-    const pool = tasks.filter(t => !t.done && t.context === activeCtx);
-    const shuffled = pool.sort(() => 0.5 - Math.random()).slice(0, 3);
-    tasks.forEach(t => t._isPanicTarget = shuffled.some(s => s.id === t.id));
-  }
-  render();
-}
-
-/* ── КЕРУВАННЯ ПРОЄКТАМИ ── */
-function toggleBackstage(p, e) {
-  e.stopPropagation();
-  if(backstageProjects.has(p)) backstageProjects.delete(p);
-  else backstageProjects.add(p);
-  localStorage.setItem('backstage', JSON.stringify([...backstageProjects]));
-  renderProjectChips();
-  render();
-}
-
-/* ── ОСНОВНА ЛОГІКА ── */
+// ── РОБОТА З ДАНИМИ ──
 async function sync() {
-  const {data} = await sb.from('scanner_tasks').select('*').order('created_at',{ascending:false});
+  const { data } = await sb.from('scanner_tasks').select('*').order('created_at', { ascending: false });
   tasks = data || [];
-  renderProjectChips();
-  updateBadges();
-  render();
+  updateCounts();
+  renderProjects();
+  renderBoard();
 }
 
-function updateBadges() {
-  ['inbox', 'today', 'someday'].forEach(ctx => {
-    const el = document.getElementById('b-'+ctx);
-    if(el) el.textContent = tasks.filter(t => t.context === ctx && !t.done).length;
+function updateCounts() {
+  ['inbox', 'today', 'someday'].forEach(c => {
+    document.getElementById(`count-${c}`).textContent = tasks.filter(t => t.context === c && !t.done).length;
   });
 }
 
-function renderProjectChips() {
-  const projs = [...new Set(tasks.filter(t => t.project).map(t => t.project))].sort();
-  const cont = document.getElementById('p-chips');
-  cont.innerHTML = `<button class="sb-chip ${projectFilter==='all'?'on':''}" onclick="setProjectFilter('all')">Всі проєкти</button>`;
-  
-  projs.forEach(p => {
-    const isBS = backstageProjects.has(p);
-    const btn = document.createElement('div');
-    btn.className = `sb-chip ${projectFilter===p?'on':''} ${isBS?'backstage':''}`;
-    btn.onclick = () => setProjectFilter(p);
-    btn.innerHTML = `<span>${p}</span> <span class="chip-toggle" onclick="toggleBackstage('${p}', event)">${isBS?'👁‍🗨':'👁'}</span>`;
-    cont.appendChild(btn);
-  });
+function setCtx(ctx) {
+  curCtx = ctx;
+  document.querySelectorAll('.ctx-tab').forEach(b => b.classList.toggle('active', b.dataset.ctx === ctx));
+  renderBoard();
 }
 
-function render() {
+// ── ПАРСИНГ ТЕКСТУ (Quick Entry) ──
+function parseTask(str) {
+  let res = { title: str, project: null, energy: 'medium', kind: 'task' };
+  const p = str.match(/#(\S+)/);
+  if(p) { res.project = p[1]; res.title = res.title.replace(p[0], ''); }
+  if(str.includes('!high')) { res.energy = 'high'; res.title = res.title.replace('!high', ''); }
+  if(str.includes('!low')) { res.energy = 'low'; res.title = res.title.replace('!low', ''); }
+  if(str.includes('??')) { res.kind = 'idea'; res.title = res.title.replace('??', ''); }
+  res.title = res.title.trim();
+  return res;
+}
+
+// ── РЕНДЕР ──
+function renderBoard() {
   const board = document.getElementById('board');
   board.innerHTML = '';
-
-  let filtered = tasks.filter(t => t.context === activeCtx);
-  if(energyFilter !== 'all') filtered = filtered.filter(t => t.energy === energyFilter);
-  if(projectFilter !== 'all') filtered = filtered.filter(t => t.project === projectFilter);
   
-  // Hide backstage projects if not specifically filtered
-  if(projectFilter === 'all') {
-    filtered = filtered.filter(t => !t.project || !backstageProjects.has(t.project));
-  }
+  let filtered = tasks.filter(t => t.context === curCtx);
+  if(curProj !== 'all') filtered = filtered.filter(t => t.project === curProj);
 
-  const columns = activeCtx === 'inbox' ? ['Вхідні'] : Object.keys(ENERGIES);
+  const cols = curCtx === 'inbox' ? ['Вхідні'] : Object.keys(ENERGIES);
 
-  columns.forEach(colKey => {
-    const colEl = document.createElement('div');
-    colEl.className = 'col';
-    const title = activeCtx === 'inbox' ? colKey : ENERGIES[colKey] + ' ' + colKey.toUpperCase();
-    
-    const list = activeCtx === 'inbox' ? filtered : filtered.filter(t => t.energy === colKey);
-    const active = list.filter(t => !t.done);
-    const done = list.filter(t => t.done);
-
-    colEl.innerHTML = `
-      <div class="col-head"><span>${title}</span> <small>${active.length}</small></div>
-      <div class="col-body" id="col-${colKey}"></div>
+  cols.forEach(cKey => {
+    const colTasks = curCtx === 'inbox' ? filtered : filtered.filter(t => t.energy === cKey);
+    const col = document.createElement('div');
+    col.className = 'col';
+    col.innerHTML = `
+      <div class="col-head">${curCtx==='inbox'? 'INBOX' : ENERGIES[cKey]} <span>${colTasks.filter(t=>!t.done).length}</span></div>
+      <div class="col-body"></div>
       <div class="col-footer">
-        <input class="inp" style="margin-bottom:0" placeholder="+ Швидко (#проек !high ??ідея)" onkeydown="quickAdd(event, '${activeCtx === 'inbox' ? 'medium' : colKey}')">
+        <input class="inp" placeholder="+ Додати..." onkeydown="handleQuickAdd(event, '${cKey}')">
       </div>
     `;
-    board.appendChild(colEl);
-    
-    const body = colEl.querySelector('.col-body');
-    active.forEach(t => body.appendChild(mkCard(t)));
-    if(done.length > 0) {
-      const doneBtn = document.createElement('div');
-      doneBtn.style = "text-align:center; font-size:.6rem; color:var(--muted); cursor:pointer; padding:5px";
-      doneBtn.textContent = `Завершені (${done.length})`;
-      doneBtn.onclick = () => {
-        done.forEach(t => body.appendChild(mkCard(t)));
-        doneBtn.remove();
-      };
-      body.appendChild(doneBtn);
-    }
+    const body = col.querySelector('.col-body');
+    colTasks.forEach(t => body.appendChild(createCard(t)));
+    board.appendChild(col);
   });
 }
 
-function mkCard(t) {
-  const el = document.createElement('div');
-  el.className = `tcard ${t.done ? 'done-card' : ''} ${panicMode && t._isPanicTarget ? 'panic-target' : ''}`;
-  el.dataset.e = t.energy;
-  el.dataset.kind = t.kind;
-  
-  const isIdea = t.kind === 'idea';
-
-  el.innerHTML = `
-    <div class="tc-row">
-      ${!isIdea ? `<div class="tc-cb" onclick="ev(event, ()=>toggleDone('${t.id}', ${t.done}))">${t.done?'✓':''}</div>` : '💡'}
-      <div class="tc-title" onclick="openMod('${t.id}')">${t.title}</div>
+function createCard(t) {
+  const card = document.createElement('div');
+  card.className = `tcard ${t.done ? 'done' : ''} ${t._isPanic ? 'panic-target' : ''}`;
+  card.dataset.e = t.energy;
+  card.innerHTML = `
+    <div class="tc-main">
+      <div class="tc-check" onclick="toggleTask('${t.id}', ${t.done})">${t.done ? '✓' : ''}</div>
+      <div class="tc-title" onclick="openEdit('${t.id}')">${t.title}</div>
     </div>
     <div class="tc-meta">
-      ${t.project ? `<span style="background:var(--accent-light); padding:0 4px">${t.project}</span>` : ''}
-      <span>${KINDS[t.kind] || ''}</span>
+      ${t.project ? `<span style="color:var(--accent)">#${t.project}</span>` : ''}
+      <span>${t.kind === 'idea' ? '💡 Ідея' : ''}</span>
     </div>
-    ${isIdea ? `<div class="sprout-btn" onclick="ev(event, ()=>sprout('${t.id}'))">🌱 Проростити</div>` : ''}
   `;
-  return el;
+  return card;
 }
 
-async function quickAdd(e, energy) {
+function renderProjects() {
+  const container = document.getElementById('project-list');
+  const projs = [...new Set(tasks.map(t => t.project).filter(Boolean))];
+  container.innerHTML = `<div class="sb-item ${curProj==='all'?'active':''}" onclick="setProj('all')">Всі проєкти</div>`;
+  projs.forEach(p => {
+    const el = document.createElement('div');
+    el.className = `sb-item ${curProj===p?'active':''}`;
+    el.onclick = () => setProj(p);
+    el.textContent = `# ${p}`;
+    container.appendChild(el);
+  });
+}
+
+function setProj(p) { curProj = p; renderBoard(); renderProjects(); if(window.innerWidth < 768) toggleSB(); }
+
+// ── ДІЇ ──
+async function handleQuickAdd(e, energy) {
   if(e.key !== 'Enter' || !e.target.value.trim()) return;
-  const parsed = parseQuickEntry(e.target.value);
+  const parsed = parseTask(e.target.value);
   const user = (await sb.auth.getUser()).data.user;
-  
   await sb.from('scanner_tasks').insert([{
     ...parsed,
-    context: activeCtx,
-    energy: parsed.energy !== 'medium' ? parsed.energy : energy,
+    context: curCtx,
+    energy: parsed.energy === 'medium' ? (curCtx==='inbox'?'medium':energy) : parsed.energy,
     user_id: user.id
   }]);
   e.target.value = '';
   sync();
 }
 
-async function sprout(id) {
-  await sb.from('scanner_tasks').update({kind: 'task', context: 'today'}).eq('id', id);
+async function toggleTask(id, state) {
+  await sb.from('scanner_tasks').update({ done: !state, done_at: !state ? new Date() : null }).eq('id', id);
   sync();
 }
 
-/* ── СТАНДАРТНІ ФУНКЦІЇ ── */
-async function toggleDone(id, cur) { await sb.from('scanner_tasks').update({done: !cur, done_at: !cur?new Date():null}).eq('id', id); sync(); }
-function setEFilter(v) { energyFilter = v; document.querySelectorAll('#e-chips button').forEach(b=>b.classList.toggle('on', b.dataset.e===v)); render(); }
-function setProjectFilter(v) { projectFilter = v; renderProjectChips(); render(); }
-function toggleSB() { document.body.hasAttribute('data-sc') ? document.body.removeAttribute('data-sc') : document.body.setAttribute('data-sc',''); }
-function ev(e, fn) { e.stopPropagation(); fn(); }
+function togglePanic() {
+  isPanic = !isPanic;
+  document.body.classList.toggle('panic', isPanic);
+  document.getElementById('panic-btn').classList.toggle('panic-on', isPanic);
+  if(isPanic) {
+    const active = tasks.filter(t => !t.done && t.context === curCtx);
+    const selected = active.sort(() => 0.5 - Math.random()).slice(0, 3);
+    tasks.forEach(t => t._isPanic = selected.some(s => s.id === t.id));
+  }
+  renderBoard();
+}
 
-document.getElementById('ctx-bar').onclick = e => {
-  const tab = e.target.closest('.ctx-tab');
-  if(!tab) return;
-  document.querySelectorAll('.ctx-tab').forEach(t=>t.classList.remove('active'));
-  tab.classList.add('active');
-  activeCtx = tab.dataset.ctx;
-  render();
-};
-
-function openMod(id=null) {
-  const t = tasks.find(x => x.id === id) || {title:'', note:'', kind:'task', energy:'medium', project:''};
-  const m = document.getElementById('modal');
-  const body = document.getElementById('mbody');
-  m.style.display='flex';
+function openEdit(id = null) {
+  const t = tasks.find(x => x.id === id) || { title: '', note: '', energy: 'medium', project: '', kind: 'task' };
+  const mod = document.getElementById('modal');
+  const body = document.getElementById('m-body');
+  mod.style.display = 'flex';
   body.innerHTML = `
-    <h3 style="margin-bottom:1rem">${id?'Редагувати':'Нова задача'}</h3>
     <input id="m-title" class="inp" value="${t.title}" placeholder="Назва">
-    <textarea id="m-note" class="inp" style="height:80px" placeholder="Нотатки">${t.note||''}</textarea>
-    <select id="m-kind" class="inp">
-      ${Object.entries(KINDS).map(([k,v])=>`<option value="${k}" ${t.kind===k?'selected':''}>${v}</option>`)}
-    </select>
+    <textarea id="m-note" class="inp" style="height:100px" placeholder="Нотатки">${t.note || ''}</textarea>
     <select id="m-energy" class="inp">
-      ${Object.entries(ENERGIES).map(([k,v])=>`<option value="${k}" ${t.energy===k?'selected':''}>${v}</option>`)}
+      ${Object.entries(ENERGIES).map(([k,v]) => `<option value="${k}" ${t.energy===k?'selected':''}>${v}</option>`).join('')}
     </select>
-    <input id="m-project" class="inp" value="${t.project||''}" placeholder="Проєкт">
-    <button class="pbtn" onclick="saveTask('${id}')">Зберегти</button>
-    ${id ? `<button class="pbtn" style="background:var(--error)" onclick="delTask('${id}')">Видалити</button>` : ''}
+    <input id="m-project" class="inp" value="${t.project || ''}" placeholder="Проєкт (без #)">
+    <div style="display:flex; gap:0.5rem">
+      <button class="inp" style="background:var(--accent); color:#fff; border:none" onclick="saveTask('${id}')">Зберегти</button>
+      ${id ? `<button class="inp" style="background:var(--error); color:#fff; border:none; width:60px" onclick="deleteTask('${id}')">🗑</button>` : ''}
+    </div>
   `;
 }
-function closeMod() { document.getElementById('modal').style.display='none'; }
+
+function closeMod() { document.getElementById('modal').style.display = 'none'; }
+
 async function saveTask(id) {
   const user = (await sb.auth.getUser()).data.user;
-  const d = {
+  const data = {
     title: document.getElementById('m-title').value,
     note: document.getElementById('m-note').value,
-    kind: document.getElementById('m-kind').value,
     energy: document.getElementById('m-energy').value,
     project: document.getElementById('m-project').value,
     user_id: user.id
   };
-  if(id!=='null') await sb.from('scanner_tasks').update(d).eq('id', id);
-  else await sb.from('scanner_tasks').insert([{...d, context:activeCtx}]);
+  if(id !== 'null') await sb.from('scanner_tasks').update(data).eq('id', id);
+  else await sb.from('scanner_tasks').insert([{...data, context: curCtx}]);
   closeMod(); sync();
 }
-async function delTask(id) { if(confirm('Видалити?')){ await sb.from('scanner_tasks').delete().eq('id', id); closeMod(); sync(); } }
 
-async function doLogin(){
-  const {error} = await sb.auth.signInWithPassword({email:email.value, password:pass.value});
+async function deleteTask(id) {
+  if(confirm('Видалити?')) { await sb.from('scanner_tasks').delete().eq('id', id); closeMod(); sync(); }
+}
+
+async function doLogin() {
+  const { error } = await sb.auth.signInWithPassword({ email: email.value, password: pass.value });
   if(error) alert(error.message);
 }
-sb.auth.onAuthStateChange((ev, sess) => {
-  document.getElementById('auth-gate').style.display = sess ? 'none' : 'flex';
-  if(sess) sync();
+
+// ── ІНІЦІАЛІЗАЦІЯ ──
+sb.auth.onAuthStateChange((event, session) => {
+  document.getElementById('auth-gate').style.display = session ? 'none' : 'flex';
+  if(session) sync();
 });
-
-function toggleTheme() {
-  const cur = document.documentElement.dataset.theme;
-  document.documentElement.dataset.theme = cur === 'dark' ? 'light' : 'dark';
-}
-
-function promptNewProject() {
-  const p = prompt("Назва проєкту:");
-  if(p) { projectFilter = p; render(); }
-}
-
-sync();
 </script>
 </body>
 </html>
