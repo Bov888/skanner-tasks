@@ -708,6 +708,7 @@ select.inp{
   <button class="ctx-tab active" data-ctx="inbox">Вхідні<span class="badge" id="b-inbox">0</span></button>
   <button class="ctx-tab" data-ctx="today">Сьогодні<span class="badge" id="b-today">0</span></button>
   <button class="ctx-tab" data-ctx="waiting">Чекаю<span class="badge" id="b-waiting">0</span></button>
+  <button class="ctx-tab" data-ctx="icebox">🧊 Морозилка<span class="badge" id="b-icebox">0</span></button>
   <button class="ctx-tab" data-ctx="someday">Колись<span class="badge" id="b-someday">0</span></button>
 </nav>
 
@@ -764,9 +765,15 @@ select.inp{
         ⚡ Швидка перемога
       </button>
       <button class="sb-action-btn secondary" onclick="sbAction(runRoulette)">
+        🎲 Що зараз?
+      </button>
+      <button class="sb-action-btn secondary" onclick="sbAction(()=>startTimer(null))">
         🍅 Pomodoro
       </button>
       <button class="sb-action-btn secondary" onclick="sbAction(exportData)">
+        💾 Експорт JSON
+      </button>
+      <button class="sb-action-btn museum-btn" onclick="sbAction(()=>switchCtx('museum'))">
         🏛 Музей успіхів
       </button>
     </div>
@@ -801,6 +808,7 @@ const CTXS={
   inbox:  {lbl:'Вхідні',   dot:'var(--muted)'},
   today:  {lbl:'Сьогодні', dot:'var(--accent)'},
   waiting:{lbl:'Чекаю',    dot:'var(--e-med)'},
+  icebox: {lbl:'Морозилка',dot:'var(--e-low)'}, // Новий контекст
   someday:{lbl:'Колись',   dot:'var(--muted)'},
 };
 
