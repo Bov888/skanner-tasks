@@ -34,7 +34,7 @@
   --accent:#2d5a27;--accent-light:#e8f0e6;--accent-mid:#4a8a42;
   --error:#8b2010;
   --e-low:#6b8f71;--e-med:#b07d3a;--e-high:#8b2010;
-  --sw:260px;
+  --sw:230px; /* Зменшена ширина сайдбару */
 }
 [data-theme=dark]{
   --bg:#141412;--surface:#1e1d1b;--surface2:#252422;--border:#2e2d2a;
@@ -86,9 +86,8 @@ border:1px solid var(--border);width:100%;max-width:380px;}
 .ibtn svg{width:17px;height:17px;}
 .ibtn.danger:hover,.ibtn.danger:active{border-color:var(--error);color:var(--error);}
 
-/* Стабільна висота для кнопок в хедері */
 .theme-btn, .hbtn {
-  height: 34px; /* Вирівняли висоту з іншими кнопками (ibtn) */
+  height: 34px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -139,7 +138,7 @@ border:1px solid var(--border);width:100%;max-width:380px;}
 /* ══ LAYOUT ══ */
 .app-body{flex:1;display:flex;overflow:hidden;position:relative;}
 
-/* ── SIDEBAR (фільтри) ── */
+/* ── SIDEBAR ── */
 #sidebar{
   width:var(--sw);background:var(--surface);border-right:1px solid var(--border);
   display:flex;flex-direction:column;flex-shrink:0;overflow-y:auto;overflow-x:hidden;
@@ -184,7 +183,6 @@ border:1px solid var(--border);width:100%;max-width:380px;}
   touch-action:manipulation;
 }
 
-/* Filter chips у sidebar */
 .sb-chips{display:flex;flex-direction:column;gap:.3rem;}
 .sb-chip{
   font-family:'JetBrains Mono',monospace;font-size:.62rem;
@@ -199,7 +197,7 @@ border:1px solid var(--border);width:100%;max-width:380px;}
 .sb-chip:hover{border-color:var(--accent);color:var(--accent);}
 .sb-chip.on{background:var(--accent-light);border-color:var(--accent);color:var(--accent);}
 .sb-chip .chip-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
-.sb-chip .chip-ct{flex:1;}
+.sb-chip .chip-ct{flex:1;overflow:hidden;text-overflow:ellipsis;}
 .sb-chip .chip-n{
   font-family:'JetBrains Mono',monospace;font-size:.5rem;
   background:var(--surface2);color:var(--muted);
@@ -207,7 +205,6 @@ border:1px solid var(--border);width:100%;max-width:380px;}
 }
 .sb-chip.on .chip-n{background:var(--accent);color:#fff;}
 
-/* Секція проектів */
 .sb-new-proj{
   width:100%;margin-top:.4rem;padding:.35rem .7rem;
   background:none;border:1px dashed var(--border);color:var(--muted);
@@ -218,7 +215,6 @@ border:1px solid var(--border);width:100%;max-width:380px;}
 }
 .sb-new-proj:hover{border-color:var(--accent);color:var(--accent);}
 
-/* Кнопки дій у sidebar */
 .sb-actions{padding:1rem;display:flex;flex-direction:column;gap:.4rem;}
 .sb-action-btn{
   width:100%;padding:.5rem .8rem;border-radius:2px;
@@ -284,7 +280,6 @@ border:1px solid var(--border);width:100%;max-width:380px;}
 .col.dov{border-color:var(--accent);background:var(--accent-light);}
 @media(max-width:700px){.col{flex:none;width:100%;min-width:0;max-height:none;}}
 
-/* Someday Grid View (Інкубатор ідей) */
 .col.someday-grid .col-body {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
@@ -492,7 +487,7 @@ body.focus-mode .done-section {
 .timer-btn:hover{border-color:var(--accent);color:var(--accent);}
 .timer-btn.primary:hover{opacity:.85;}
 
-/* ── FAB (Нова задача - квадратна, зелена, без тексту) ── */
+/* ── FAB ── */
 #fab {
   position: fixed;
   bottom: 1.5rem;
@@ -1317,7 +1312,7 @@ async function moveCtx(t,ctx){
   await sb.from('scanner_tasks').update({context:ctx}).eq('id',t.id);sync();
 }
 
-/* ── MODAL (ОНОВЛЕНО З КНОПКОЮ ВІДМІНИ) ── */
+/* ── MODAL ── */
 function openMod(t=null){
   editId=t?.id??null;
   const body=document.getElementById('mbody');
@@ -1326,6 +1321,7 @@ function openMod(t=null){
   const projs=getProjects();
   const projOpts=['<option value="">— без проєкту —</option>',
     ...projs.map(p=>`<option${t?.project===p?' selected':''}>${p}</option>`)].join('');
+  
   body.innerHTML=`
     <div class="mttl">${t?'Редагувати':'Нова'} задача</div>
     <label class="ilbl">Назва</label>
@@ -1360,9 +1356,9 @@ function openMod(t=null){
     ${t?`<label class="done-toggle-wrap"><input type="checkbox" id="m-done" ${t.done?'checked':''}>
       <span class="dttrack"></span><span class="dtlbl">Завершено</span></label>`:''}
     
-    <div style="display:flex; gap:.5rem; margin-top:.75rem;">
-      <button class="pbtn" onclick="saveTask()" style="flex:2;">Зберегти</button>
-      <button class="pbtn secondary" onclick="closeMod()" style="flex:1;">Відмінити</button>
+    <div style="display:flex; flex-direction:column; gap:.5rem; margin-top:.75rem;">
+      <button class="pbtn" onclick="saveTask()" style="width:100%;">Зберегти</button>
+      <button class="pbtn secondary" onclick="closeMod()" style="width:100%;">Відмінити</button>
     </div>
     ${t?`<button class="delbtn" onclick="delTask('${t.id}')">Видалити задачу</button>`:''}`;
   setTimeout(()=>document.getElementById('m-ttl')?.focus(),40);
