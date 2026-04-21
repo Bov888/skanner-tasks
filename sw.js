@@ -1,7 +1,10 @@
+const CACHE_NAME = 'scanner-v1';
+
 self.addEventListener('install', (event) => {
-  self.skipWaiting();
+    self.skipWaiting();
 });
 
 self.addEventListener('fetch', (event) => {
-  // Це дозволяє додатку завантажуватися швидше
+    // Дозволяємо браузеру просто завантажувати файли
+    event.respondWith(fetch(event.request));
 });
