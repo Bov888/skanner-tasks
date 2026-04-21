@@ -344,9 +344,32 @@
   .tcard[data-e=medium]::before{background:var(--e-med);}
   .tcard[data-e=high]::before{background:var(--e-high);}
   .tcard.stale{opacity:.55;border-style:dashed;}
-  .tcard.done-card{opacity:.45;background:var(--surface);}
-  .tcard.done-card .tc-title{text-decoration:line-through;color:var(--muted);}
-  .tcard.done-card::before{background:var(--border)!important;}
+  
+  /* СТИЛІ ДЛЯ ЗАВЕРШЕНИХ ЗАДАЧ (ПОВНЕ ПЕРЕКРЕСЛЕННЯ) */
+  .tcard.done-card {
+    opacity: .45;
+    background: var(--surface);
+    color: var(--muted);
+    text-decoration: line-through;
+  }
+  .tcard.done-card .tc-title {
+    color: var(--muted);
+  }
+  .tcard.done-card::before {
+    background: var(--border) !important;
+  }
+  .tcard.done-card .tc-proj {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--muted);
+  }
+  .tcard.done-card .tc-cb {
+    text-decoration: none; /* Галочка без перекреслення */
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+  }
+  
   .tcard.dragging{opacity:.3;transform:scale(.97);}
 
   .tc-row{display:flex;align-items:flex-start;gap:.5rem;margin-bottom:.3rem;}
@@ -358,7 +381,7 @@
     transition:all .15s;touch-action:manipulation;font-size:.6rem;
   }
   .tc-cb:hover{border-color:var(--accent);}
-  .tcard.done-card .tc-cb{background:var(--accent);border-color:var(--accent);color:#fff;}
+  
   .tc-title{
     font-family:'Literata',Georgia,serif;font-size:.95rem;font-weight:300;
     line-height:1.4;flex:1;word-break:break-word;
@@ -761,12 +784,6 @@
       <button class="sb-action-btn secondary" onclick="sbAction(runQuickWin)">
         ⚡ Швидка перемога
       </button>
-      <button class="sb-action-btn secondary" onclick="sbAction(runRoulette)">
-        🎲 Що зараз?
-      </button>
-      <button class="sb-action-btn secondary" onclick="sbAction(()=>startTimer(null))">
-        🍅 Pomodoro
-      </button>
       <button class="sb-action-btn museum-btn" onclick="sbAction(()=>switchCtx('museum'))">
         🏛 Музей успіхів
       </button>
@@ -901,6 +918,7 @@ function renderProjectChips(){
   const allBtn=document.createElement('button');
   allBtn.className='sb-chip'+(projectFilter==='all'?' on':'');
   allBtn.dataset.p='all';allBtn.onclick=()=>setPFilter('all');
+  // Показуємо лише активні задачі (!t.done)
   allBtn.innerHTML=`<span class="chip-ct">Всі проєкти</span><span class="chip-n">${tasks.filter(t=>!t.done).length}</span>`;
   container.appendChild(allBtn);
 
@@ -976,13 +994,7 @@ function toggleFocus(){
   render();
 }
 
-/* ── ROULETTE & QUICK WINS ── */
-function runRoulette(){
-  const pool=tasks.filter(t=>t.context==='someday'&&!t.done);
-  if(!pool.length){alert("Немає задач у 'Колись' для рулетки");return;}
-  openMod(pool[Math.floor(Math.random()*pool.length)]);
-}
-
+/* ── QUICK WINS ── */
 function runQuickWin(){
   const pool=tasks.filter(t=>!t.done && t.energy==='low' && t.context!=='someday');
   if(!pool.length){alert("Зараз немає активних задач на низьку енергію. Зроби перерву!");return;}
@@ -1239,7 +1251,12 @@ function mkCard(t,isDone=false){
   cb.addEventListener('click',e=>{e.stopPropagation();toggleDone(t);});
   const ttl=document.createElement('div');ttl.className='tc-title';
   ttl.textContent=t.title+(isStale?' 🕸️':'');
-  row.appendChild(cb);row.appendChild(ttl);el.appendChild(row);
+  
+  // Додаємо елементи в зворотному порядку, щоб галочка була праворуч
+  row.appendChild(ttl);
+  row.appendChild(cb);
+  el.appendChild(row);
+  
   const meta=document.createElement('div');meta.className='tc-meta';
   meta.innerHTML=`<span>${kIcon(t.kind||'task')} ${KINDS.find(k=>k.id===t.kind)?.lbl||'Задача'}</span>`;
   if(t.project){const pb=document.createElement('span');pb.className='tc-proj';pb.textContent=t.project;meta.appendChild(pb);}
