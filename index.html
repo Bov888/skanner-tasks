@@ -547,3 +547,862 @@ body.focus-mode .done-section {
 .inp{
   width:100%;padding:.56rem .85rem;margin-bottom:.75rem;border-radius:2px;
   background:var(--surface);color:var(--text);border:1px solid var(--border);
+  font-family:'Literata',Georgia,serif;font-size:.92rem;font-weight:300;
+  transition:border-color .15s;
+}
+.inp:focus{border-color:var(--accent);}
+.inp::placeholder{color:var(--muted);}
+textarea.inp{resize:vertical;min-height:72px;line-height:1.5;}
+select.inp{
+  font-family:'JetBrains Mono',monospace;font-size:.7rem;
+  appearance:none;cursor:pointer;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238a8880' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right .7rem center;
+}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:.7rem;}
+.seg{display:flex;gap:.4rem;margin-bottom:.75rem;flex-wrap:wrap;}
+.seg-btn{
+  flex:1;min-width:58px;padding:.45rem .3rem;border-radius:2px;
+  border:1px solid var(--border);background:none;color:var(--muted);
+  font-family:'JetBrains Mono',monospace;font-size:.53rem;
+  letter-spacing:.04em;text-transform:uppercase;cursor:pointer;
+  transition:all .15s;display:flex;flex-direction:column;align-items:center;gap:3px;
+  touch-action:manipulation;
+}
+.seg-btn .si{font-size:.95rem;line-height:1;}
+.seg-btn:hover{border-color:var(--accent);color:var(--accent);}
+.seg-btn.on{background:var(--accent-light);border-color:var(--accent);color:var(--accent);}
+.seg-btn[data-e=low].on{background:#edf5ee;border-color:var(--e-low);color:var(--e-low);}
+.seg-btn[data-e=medium].on{background:#fdf3e7;border-color:var(--e-med);color:var(--e-med);}
+.seg-btn[data-e=high].on{background:#fde8e6;border-color:var(--e-high);color:var(--e-high);}
+[data-theme=dark] .seg-btn[data-e=low].on{background:#1a2e1c;border-color:var(--e-low);color:var(--e-low);}
+[data-theme=dark] .seg-btn[data-e=medium].on{background:#2e2010;border-color:var(--e-med);color:var(--e-med);}
+[data-theme=dark] .seg-btn[data-e=high].on{background:#2e1010;border-color:var(--e-high);color:var(--e-high);}
+.done-toggle-wrap{display:flex;align-items:center;gap:.6rem;
+  padding:.56rem 0;margin-bottom:.75rem;cursor:pointer;}
+.done-toggle-wrap input{display:none;}
+.dttrack{width:32px;height:18px;background:var(--border);border-radius:9px;
+  position:relative;transition:background .2s;flex-shrink:0;}
+.dttrack::after{content:'';position:absolute;top:2px;left:2px;
+  width:14px;height:14px;border-radius:50%;background:#fff;transition:transform .2s;}
+.done-toggle-wrap input:checked+.dttrack{background:var(--accent);}
+.done-toggle-wrap input:checked+.dttrack::after{transform:translateX(14px);}
+.dtlbl{font-family:'JetBrains Mono',monospace;font-size:.65rem;
+  letter-spacing:.06em;text-transform:uppercase;color:var(--muted);}
+.pbtn{
+  padding:.56rem 1rem;border-radius:2px;background:var(--accent);
+  color:#fff;font-family:'JetBrains Mono',monospace;font-size:.62rem;
+  font-weight:500;letter-spacing:.08em;text-transform:uppercase;
+  cursor:pointer;border:none;transition:all .15s;touch-action:manipulation;
+}
+.pbtn:hover{opacity:.85;}
+.pbtn.secondary {
+  background: var(--surface);
+  color: var(--muted);
+  border: 1px solid var(--border);
+}
+.pbtn.secondary:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.delbtn{font-family:'JetBrains Mono',monospace;font-size:.56rem;
+  letter-spacing:.06em;text-transform:uppercase;color:var(--error);
+  background:none;cursor:pointer;padding:0;
+  margin-top:.75rem;width:100%;text-align:center;}
+.aerr{color:var(--error);font-family:'JetBrains Mono',monospace;
+  font-size:.65rem;margin-top:.75rem;text-align:center;}
+.ldg{font-family:'JetBrains Mono',monospace;font-size:.65rem;
+  color:var(--muted);text-align:center;padding:3rem;letter-spacing:.06em;}
+.empty{display:flex;flex-direction:column;align-items:center;padding:2.5rem 1rem;gap:.5rem;}
+.empty-lbl{font-family:'JetBrains Mono',monospace;font-size:.58rem;
+  letter-spacing:.08em;text-transform:uppercase;color:var(--muted);}
+
+/* ── DRAG GHOST ── */
+.drag-ghost{
+  position:fixed;pointer-events:none;z-index:9999;
+  background:var(--accent);color:#fff;border-radius:3px;padding:5px 10px;
+  font-family:'JetBrains Mono',monospace;font-size:.65rem;
+  opacity:.92;transform:translate(-50%,-60%) scale(1.04);
+  box-shadow:0 6px 20px rgba(0,0,0,.3);
+  max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+</style>
+</head>
+<body data-sc>
+
+<div id="auth-gate">
+  <div class="auth-card">
+    <div class="auth-logo">Scanner<span>Tasks</span></div>
+    <label class="ilbl">Електронна пошта</label>
+    <input type="email" id="email" class="inp" placeholder="email@example.com" style="margin-bottom:.8rem">
+    <label class="ilbl">Пароль</label>
+    <input type="password" id="pass" class="inp" placeholder="••••••••" style="margin-bottom:1.2rem">
+    <button class="pbtn" style="width:100%" onclick="doLogin()">Увійти</button>
+    <p id="auth-err" class="aerr"></p>
+  </div>
+</div>
+
+<div id="overlay"></div>
+
+<div id="timer-overlay">
+  <div class="timer-card">
+    <div class="timer-label">🍅 Pomodoro</div>
+    <div class="timer-task-ttl" id="timer-task-ttl">—</div>
+    <div class="timer-settings">
+      <button class="timer-preset on" data-m="25" onclick="setTimerPreset(this,25)">25 хв</button>
+      <button class="timer-preset" data-m="15" onclick="setTimerPreset(this,15)">15 хв</button>
+      <button class="timer-preset" data-m="5"  onclick="setTimerPreset(this,5)">5 хв</button>
+      <input class="timer-inp" id="timer-custom" type="number" min="1" max="99" value="25"
+        onchange="setTimerCustom(this.value)" placeholder="хв">
+    </div>
+    <div class="timer-display" id="timer-display">25:00</div>
+    <div class="timer-progress"><div class="timer-progress-bar" id="timer-bar" style="width:100%"></div></div>
+    <div class="timer-btn-row">
+      <button class="timer-btn primary" id="timer-start-btn" onclick="timerToggle()">▶ Старт</button>
+      <button class="timer-btn" onclick="timerDone()">✓ Готово</button>
+      <button class="timer-btn" onclick="timerClose()">✕</button>
+    </div>
+  </div>
+</div>
+
+<header class="topbar">
+  <button class="ibtn" id="menu-btn" aria-label="Фільтри">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+      <path d="M3 12h18M3 6h18M3 18h18"/>
+    </svg>
+  </button>
+  <button class="logo-btn" onclick="location.reload()">
+    <svg width="26" height="26" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+      <line x1="16" y1="15" x2="6"  y2="6"  stroke="var(--accent)" stroke-width="0.9" opacity="0.35"/>
+      <line x1="16" y1="15" x2="26" y2="6"  stroke="var(--accent)" stroke-width="0.9" opacity="0.35"/>
+      <line x1="16" y1="15" x2="27" y2="18" stroke="var(--accent)" stroke-width="0.9" opacity="0.35"/>
+      <line x1="16" y1="15" x2="22" y2="27" stroke="var(--accent)" stroke-width="0.9" opacity="0.35"/>
+      <line x1="16" y1="15" x2="9"  y2="26" stroke="var(--accent)" stroke-width="0.9" opacity="0.35"/>
+      <line x1="16" y1="15" x2="5"  y2="18" stroke="var(--accent)" stroke-width="0.9" opacity="0.35"/>
+      <line x1="6"  y1="6"  x2="26" y2="6"  stroke="var(--accent)" stroke-width="0.6" opacity="0.15"/>
+      <line x1="27" y1="18" x2="22" y2="27" stroke="var(--accent)" stroke-width="0.6" opacity="0.15"/>
+      <line x1="9"  y1="26" x2="5"  y2="18" stroke="var(--accent)" stroke-width="0.6" opacity="0.15"/>
+      <circle cx="6"  cy="6"  r="1.8" fill="var(--accent)" opacity="0.4"/>
+      <circle cx="26" cy="6"  r="2.4" fill="var(--accent)" opacity="0.55"/>
+      <circle cx="27" cy="18" r="1.6" fill="var(--accent)" opacity="0.4"/>
+      <circle cx="22" cy="27" r="2"   fill="var(--accent)" opacity="0.45"/>
+      <circle cx="9"  cy="26" r="1.5" fill="var(--accent)" opacity="0.38"/>
+      <circle cx="5"  cy="18" r="1.8" fill="var(--accent)" opacity="0.42"/>
+      <circle cx="16" cy="15" r="5"   stroke="var(--accent)" stroke-width="0.8" fill="none" opacity="0.25"/>
+      <circle cx="16" cy="15" r="4"   fill="var(--accent)"/>
+      <circle cx="16" cy="15" r="2.2" fill="var(--bg)"/>
+      <circle cx="16" cy="15" r="1.2" fill="var(--accent)"/>
+    </svg>
+    Scanner<span>Tasks</span>
+  </button>
+  <button class="hbtn" id="focus-btn" onclick="toggleFocus()" title="Фокус-режим: тільки завдання поточного контексту">🎯 Фокус</button>
+  <button class="theme-btn" id="theme-btn" onclick="toggleTheme()">☾ тема</button>
+  <button class="ibtn danger" id="btn-logout" title="Вийти">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/>
+    </svg>
+  </button>
+</header>
+
+<nav class="ctx-bar" id="ctx-bar">
+  <button class="ctx-tab active" data-ctx="inbox">Вхідні<span class="badge" id="b-inbox">0</span></button>
+  <button class="ctx-tab" data-ctx="today">Сьогодні<span class="badge" id="b-today">0</span></button>
+  <button class="ctx-tab" data-ctx="waiting">Чекаю<span class="badge" id="b-waiting">0</span></button>
+  <button class="ctx-tab" data-ctx="someday">Колись<span class="badge" id="b-someday">0</span></button>
+</nav>
+
+<div class="app-body">
+  <aside id="sidebar">
+    <div class="sb-header">
+      <span class="sb-title">Фільтри і дії</span>
+      <button class="sb-close" id="sb-close">✕</button>
+    </div>
+
+    <div class="sb-section">
+      <div class="sb-section-title">
+        Енергія
+        <button class="sb-clr" id="e-clr-btn" style="display:none" onclick="clearEFilter()">скинути</button>
+      </div>
+      <div class="sb-chips" id="e-chips">
+        <button class="sb-chip on" data-e="all" onclick="setEFilter(this,'all')">
+          <span class="chip-ct">Всі</span>
+        </button>
+        <button class="sb-chip" data-e="low" onclick="setEFilter(this,'low')">
+          <span class="chip-dot" style="background:var(--e-low)"></span>
+          <span class="chip-ct">🌿 Низька</span>
+        </button>
+        <button class="sb-chip" data-e="medium" onclick="setEFilter(this,'medium')">
+          <span class="chip-dot" style="background:var(--e-med)"></span>
+          <span class="chip-ct">⚡ Середня</span>
+        </button>
+        <button class="sb-chip" data-e="high" onclick="setEFilter(this,'high')">
+          <span class="chip-dot" style="background:var(--e-high)"></span>
+          <span class="chip-ct">🔥 Висока</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="sb-section">
+      <div class="sb-section-title">
+        Проєкти
+        <button class="sb-clr" id="p-clr-btn" style="display:none" onclick="setPFilter('all')">скинути</button>
+      </div>
+      <div class="sb-chips" id="p-chips">
+        <button class="sb-chip on" data-p="all" onclick="setPFilter('all')">
+          <span class="chip-ct">Всі проєкти</span>
+        </button>
+        </div>
+      <button class="sb-new-proj" onclick="promptNewProject()">+ Новий проєкт</button>
+    </div>
+
+    <div class="sb-actions">
+      <button class="sb-action-btn primary" onclick="sbAction(()=>openMod(null))">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+        Нова задача
+      </button>
+      <button class="sb-action-btn secondary" onclick="sbAction(runQuickWin)">
+        ⚡ Швидка перемога
+      </button>
+      <button class="sb-action-btn secondary" onclick="sbAction(runRoulette)">
+        🎲 Що зараз?
+      </button>
+      <button class="sb-action-btn secondary" onclick="sbAction(()=>startTimer(null))">
+        🍅 Pomodoro
+      </button>
+      <button class="sb-action-btn museum-btn" onclick="sbAction(()=>switchCtx('museum'))">
+        🏛 Музей успіхів
+      </button>
+    </div>
+  </aside>
+
+  <div id="main-area">
+    <div id="board"><p class="ldg">Завантаження...</p></div>
+    <div id="museum-view"></div>
+  </div>
+</div>
+
+<button id="fab" onclick="openMod(null)" title="Нова задача"></button>
+
+<div id="modal" class="modal" onclick="if(event.target===this)closeMod()">
+  <div class="mcard" id="mbody"></div>
+</div>
+
+<script>
+const SB_URL="https://mlkdphygsdfcanztbtez.supabase.co";
+const SB_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1sa2RwaHlnc2RmY2FuenRidGV6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYyODAwNTAsImV4cCI6MjA5MTg1NjA1MH0.PfjkZXua-9tp2lxVsBD3YBUNpx_USmMha5BQBZcGLFc";
+const sb=supabase.createClient(SB_URL,SB_KEY);
+
+let tasks=[];
+let activeCtx='inbox';
+let energyFilter='all';
+let projectFilter='all';
+let focusMode=false;
+let editId=null;
+
+const CTXS={
+  inbox:  {lbl:'Вхідні',   dot:'var(--muted)'},
+  today:  {lbl:'Сьогодні', dot:'var(--accent)'},
+  waiting:{lbl:'Чекаю',    dot:'var(--e-med)'},
+  someday:{lbl:'Колись',   dot:'var(--muted)'}
+};
+
+const KINDS=[
+  {id:'task',    icon:'☐', lbl:'Задача'},
+  {id:'project', icon:'🎯',lbl:'Проєкт'},
+  {id:'interest',icon:'✦', lbl:'Інтерес'},
+  {id:'zone',    icon:'◎', lbl:'Зона'},
+];
+
+const ENERGIES=[
+  {id:'low',   icon:'🌿',lbl:'Низька'},
+  {id:'medium',icon:'⚡',lbl:'Середня'},
+  {id:'high',  icon:'🔥',lbl:'Висока'},
+];
+const UA_MONTHS=['Січень','Лютий','Березень','Квітень','Травень','Червень',
+  'Липень','Серпень','Вересень','Жовтень','Листопад','Грудень'];
+const kIcon=k=>KINDS.find(x=>x.id===k)?.icon||'☐';
+
+const getProjects=()=>[...new Set(tasks.filter(t=>t.project).map(t=>t.project))].sort();
+
+/* ── THEME ── */
+function initTheme(){
+  const t=localStorage.getItem('st-theme')||(matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light');
+  document.documentElement.dataset.theme=t;
+  document.getElementById('theme-btn').textContent=t==='dark'?'☀ тема':'☾ тема';
+}
+function toggleTheme(){
+  const n=document.documentElement.dataset.theme==='dark'?'light':'dark';
+  document.documentElement.dataset.theme=n;
+  localStorage.setItem('st-theme',n);
+  document.getElementById('theme-btn').textContent=n==='dark'?'☀ тема':'☾ тема';
+}
+
+/* ── AUTH ── */
+async function doLogin(){
+  const{error}=await sb.auth.signInWithPassword({email:email.value,password:pass.value});
+  if(error)document.getElementById('auth-err').textContent='Помилка: '+error.message;
+}
+document.getElementById('btn-logout').addEventListener('click',async()=>{
+  await sb.auth.signOut();location.reload();
+});
+sb.auth.onAuthStateChange((ev,sess)=>{
+  document.getElementById('auth-gate').style.display=sess?'none':'flex';
+  if(sess)sync();
+  initTheme();
+});
+
+/* ── DATA ── */
+async function sync(){
+  const{data}=await sb.from('scanner_tasks').select('*').order('created_at',{ascending:false});
+  tasks=data||[];
+  updateBadges();
+  renderProjectChips();
+  render();
+}
+function updateBadges(){
+  Object.keys(CTXS).forEach(k=>{
+    const c=tasks.filter(t=>t.context===k&&!t.done).length;
+    const el=document.getElementById('b-'+k);
+    if(el)el.textContent=c;
+  });
+}
+
+/* ── SIDEBAR ── */
+const SB_EL=document.getElementById('sidebar');
+const OVL=document.getElementById('overlay');
+const isMob=()=>innerWidth<=768;
+
+function openSB(){
+  if(isMob()){SB_EL.style.transform='translateX(0)';OVL.setAttribute('data-open','');}
+  else{document.body.removeAttribute('data-sc');}
+}
+function closeSB(){
+  if(isMob()){SB_EL.style.transform='';OVL.removeAttribute('data-open');}
+  else{document.body.setAttribute('data-sc','');}
+}
+function toggleSB(){
+  if(isMob()) SB_EL.style.transform?closeSB():openSB();
+  else document.body.hasAttribute('data-sc')?openSB():closeSB();
+}
+function sbAction(fn){
+  if(isMob()){closeSB();setTimeout(fn,270);}
+  else fn();
+}
+
+document.getElementById('menu-btn').addEventListener('click',e=>{e.stopPropagation();toggleSB();});
+document.getElementById('sb-close').addEventListener('click',closeSB);
+OVL.addEventListener('click',closeSB);
+
+/* ── PROJECT CHIPS ── */
+function renderProjectChips(){
+  const projs=getProjects();
+  const container=document.getElementById('p-chips');
+  container.innerHTML='';
+  const allBtn=document.createElement('button');
+  allBtn.className='sb-chip'+(projectFilter==='all'?' on':'');
+  allBtn.dataset.p='all';allBtn.onclick=()=>setPFilter('all');
+  allBtn.innerHTML=`<span class="chip-ct">Всі проєкти</span><span class="chip-n">${tasks.filter(t=>!t.done).length}</span>`;
+  container.appendChild(allBtn);
+
+  projs.forEach(p=>{
+    const cnt=tasks.filter(t=>t.project===p&&!t.done).length;
+    const b=document.createElement('button');
+    b.className='sb-chip'+(projectFilter===p?' on':'');
+    b.dataset.p=p;b.onclick=()=>setPFilter(p);
+    b.innerHTML=`<span class="chip-dot" style="background:var(--accent);opacity:.5"></span>
+      <span class="chip-ct">${p}</span><span class="chip-n">${cnt}</span>`;
+    container.appendChild(b);
+  });
+  document.getElementById('p-clr-btn').style.display=projectFilter!=='all'?'':'none';
+}
+
+function setPFilter(val){
+  projectFilter=val;
+  document.querySelectorAll('#p-chips .sb-chip').forEach(b=>b.classList.toggle('on',b.dataset.p===val));
+  document.getElementById('p-clr-btn').style.display=val!=='all'?'':'none';
+  render();
+}
+
+async function promptNewProject(){
+  const name=prompt('Назва нового проєкту:');
+  if(!name?.trim())return;
+  const user=(await sb.auth.getUser()).data.user;
+  await sb.from('scanner_tasks').insert([{
+    title:'Перша задача проєкту '+name.trim(),
+    project:name.trim(),context:'inbox',energy:'medium',
+    kind:'task',user_id:user.id
+  }]);
+  sync();
+}
+
+/* ── ENERGY FILTER ── */
+function setEFilter(btn,val){
+  energyFilter=val;
+  document.querySelectorAll('#e-chips .sb-chip').forEach(b=>b.classList.toggle('on',b.dataset.e===val));
+  document.getElementById('e-clr-btn').style.display=val!=='all'?'':'none';
+  render();
+}
+function clearEFilter(){setEFilter(document.querySelector('#e-chips .sb-chip[data-e=all]'),'all');}
+
+/* ── CTX SWITCH ── */
+function switchCtx(ctx){
+  activeCtx=ctx;
+  document.querySelectorAll('.ctx-tab').forEach(t=>t.classList.toggle('active',t.dataset.ctx===ctx));
+  render();
+}
+document.getElementById('ctx-bar').addEventListener('click',e=>{
+  const tab=e.target.closest('.ctx-tab');
+  if(!tab)return;
+  switchCtx(tab.dataset.ctx);
+});
+
+/* Desktop drop на таби */
+document.querySelectorAll('.ctx-tab[data-ctx]').forEach(tab=>{
+  if(tab.dataset.ctx==='museum')return;
+  tab.addEventListener('dragover',e=>{e.preventDefault();tab.classList.add('dov');});
+  tab.addEventListener('dragleave',()=>tab.classList.remove('dov'));
+  tab.addEventListener('drop',async e=>{
+    e.preventDefault();tab.classList.remove('dov');
+    const id=e.dataTransfer.getData('tid');
+    if(id){await sb.from('scanner_tasks').update({context:tab.dataset.ctx}).eq('id',id);sync();}
+  });
+});
+
+/* ── FOCUS ── */
+function toggleFocus(){
+  focusMode=!focusMode;
+  document.getElementById('focus-btn').classList.toggle('on',focusMode);
+  document.body.classList.toggle('focus-mode',focusMode);
+  render();
+}
+
+/* ── ROULETTE & QUICK WINS ── */
+function runRoulette(){
+  const pool=tasks.filter(t=>t.context==='someday'&&!t.done);
+  if(!pool.length){alert("Немає задач у 'Колись' для рулетки");return;}
+  openMod(pool[Math.floor(Math.random()*pool.length)]);
+}
+
+function runQuickWin(){
+  const pool=tasks.filter(t=>!t.done && t.energy==='low' && t.context!=='someday');
+  if(!pool.length){alert("Зараз немає активних задач на низьку енергію. Зроби перерву!");return;}
+  openMod(pool[Math.floor(Math.random()*pool.length)]);
+}
+
+/* ═══════════════════════════════════════════════
+   POMODORO TIMER
+═══════════════════════════════════════════════ */
+let timerInterval=null;
+let timerTotal=25*60;
+let timerLeft=timerTotal;
+let timerRunning=false;
+let timerTaskId=null;
+
+function setTimerPreset(btn,minutes){
+  document.querySelectorAll('.timer-preset').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  document.getElementById('timer-custom').value=minutes;
+  const wasRunning=timerRunning;
+  if(wasRunning){clearInterval(timerInterval);timerRunning=false;}
+  timerTotal=minutes*60;timerLeft=timerTotal;
+  updateTimerDisplay();
+  if(wasRunning){
+    document.getElementById('timer-start-btn').textContent='▶ Старт';
+  }
+}
+function setTimerCustom(val){
+  const m=Math.max(1,Math.min(99,parseInt(val)||25));
+  document.querySelectorAll('.timer-preset').forEach(b=>b.classList.remove('on'));
+  timerTotal=m*60;timerLeft=timerTotal;
+  updateTimerDisplay();
+}
+function updateTimerDisplay(){
+  const m=Math.floor(timerLeft/60),s=timerLeft%60;
+  const el=document.getElementById('timer-display');
+  el.textContent=`${m}:${String(s).padStart(2,'0')}`;
+  el.className='timer-display'+(timerLeft<=60?' urgent':'');
+  const pct=timerTotal>0?(timerLeft/timerTotal*100):100;
+  document.getElementById('timer-bar').style.width=pct+'%';
+}
+function timerToggle(){
+  if(timerRunning){
+    clearInterval(timerInterval);timerRunning=false;
+    document.getElementById('timer-start-btn').textContent='▶ Продовжити';
+  } else {
+    timerRunning=true;
+    document.getElementById('timer-start-btn').textContent='⏸ Пауза';
+    timerInterval=setInterval(()=>{
+      if(timerLeft<=0){
+        clearInterval(timerInterval);timerRunning=false;
+        document.getElementById('timer-start-btn').textContent='✓ Час!';
+        if(navigator.vibrate)navigator.vibrate([300,100,300,100,300]);
+        if(Notification.permission==='granted'){
+          new Notification('ScannerTasks 🍅',{
+            body:'Час вийшов! '+document.getElementById('timer-task-ttl').textContent,
+            icon:'/favicon.ico'
+          });
+        }
+        return;
+      }
+      timerLeft--;updateTimerDisplay();
+    },1000);
+  }
+}
+async function timerDone(){
+  clearInterval(timerInterval);timerRunning=false;
+  if(timerTaskId){
+    await sb.from('scanner_tasks').update({done:true,done_at:new Date().toISOString()}).eq('id',timerTaskId);
+    sync();
+  }
+  timerClose();
+}
+function timerClose(){
+  clearInterval(timerInterval);timerRunning=false;
+  document.getElementById('timer-overlay').style.display='none';
+}
+function startTimer(task=null){
+  if(!task){
+    const pool=tasks.filter(t=>!t.done&&t.context!=='someday');
+    if(!pool.length){alert("Немає активних задач");return;}
+    task=pool[Math.floor(Math.random()*pool.length)];
+  }
+  timerTaskId=task.id;
+  timerLeft=timerTotal;timerRunning=false;
+  document.getElementById('timer-task-ttl').textContent=task.title;
+  document.getElementById('timer-start-btn').textContent='▶ Старт';
+  updateTimerDisplay();
+  document.getElementById('timer-overlay').style.display='flex';
+  if(Notification.permission==='default')Notification.requestPermission();
+}
+
+/* ══ DRAG & DROP ══ */
+let D={on:false,drag:false,id:null,ghost:null,tgt:null,x0:0,y0:0,lbl:'',ht:null};
+
+function mkDrag(el,taskId,label){
+  el.draggable=true;
+  el.ondragstart=e=>e.dataTransfer.setData('tid',taskId);
+  el.addEventListener('pointerdown',e=>{
+    if(e.pointerType==='mouse'||!e.isPrimary)return;
+    D={on:true,drag:false,id:taskId,ghost:null,tgt:null,x0:e.clientX,y0:e.clientY,lbl:label,
+      ht:setTimeout(()=>{
+        if(!D.on)return;
+        D.drag=true;
+        try{el.setPointerCapture(e.pointerId);}catch(_){}
+        el.classList.add('dragging');
+        const g=document.createElement('div');
+        g.className='drag-ghost';g.textContent=D.lbl;
+        g.style.left=D.x0+'px';g.style.top=D.y0+'px';
+        document.body.appendChild(g);D.ghost=g;
+        if(navigator.vibrate)navigator.vibrate(28);
+      },400)
+    };
+  });
+  el.addEventListener('pointermove',e=>{
+    if(!D.on||e.pointerType==='mouse'||!e.isPrimary)return;
+    if(!D.drag&&Math.hypot(e.clientX-D.x0,e.clientY-D.y0)>8){
+      clearTimeout(D.ht);D.on=false;return;
+    }
+    if(!D.drag)return;
+    e.preventDefault();
+    D.ghost.style.left=e.clientX+'px';D.ghost.style.top=e.clientY+'px';
+    D.ghost.style.visibility='hidden';
+    const un=document.elementFromPoint(e.clientX,e.clientY);
+    D.ghost.style.visibility='visible';
+    const nc=un?.closest('.col[data-energy]');
+    const nt2=un?.closest('.ctx-tab[data-ctx]');
+    const newTgt=nc||nt2||null;
+    if(D.tgt!==newTgt){D.tgt?.classList.remove('dov');newTgt?.classList.add('dov');D.tgt=newTgt;}
+  },{passive:false});
+  el.addEventListener('pointerup',async e=>{
+    clearTimeout(D.ht);el.classList.remove('dragging');
+    if(!D.on||e.pointerType==='mouse'||!e.isPrimary){D.on=false;return;}
+    D.ghost?.remove();D.tgt?.classList.remove('dov');
+    if(D.drag&&D.id&&D.tgt){
+      e.preventDefault();
+      const tgt=D.tgt;
+      if(tgt.classList.contains('col')&&tgt.dataset.energy!==undefined){
+        await sb.from('scanner_tasks').update({context:activeCtx,energy:tgt.dataset.energy||'medium'}).eq('id',D.id);sync();
+      } else if(tgt.classList.contains('ctx-tab')&&tgt.dataset.ctx){
+        await sb.from('scanner_tasks').update({context:tgt.dataset.ctx}).eq('id',D.id);sync();
+      }
+    }
+    D={on:false,drag:false,id:null,ghost:null,tgt:null,x0:0,y0:0,lbl:'',ht:null};
+  });
+  el.addEventListener('pointercancel',()=>{
+    clearTimeout(D.ht);el.classList.remove('dragging');
+    D.ghost?.remove();D.tgt?.classList.remove('dov');
+    D={on:false,drag:false,id:null,ghost:null,tgt:null,x0:0,y0:0,lbl:'',ht:null};
+  });
+}
+
+/* ── RENDER ── */
+function render(){
+  const board=document.getElementById('board');
+  const museum=document.getElementById('museum-view');
+
+  if(activeCtx==='museum'){
+    board.style.display='none';museum.style.display='block';
+    renderMuseum();return;
+  }
+  board.style.display='flex';museum.style.display='none';
+  board.innerHTML='';
+
+  let visible=tasks.filter(t=>!t.done&&t.context===activeCtx);
+  if(energyFilter!=='all')visible=visible.filter(t=>(t.energy||'medium')===energyFilter);
+  if(projectFilter!=='all')visible=visible.filter(t=>t.project===projectFilter);
+
+  if(activeCtx==='someday'){
+    const col = buildCol('💡 Ідеї та плани (Someday / Maybe)', 'var(--muted)', null, visible, []);
+    col.classList.add('someday-grid');
+    board.appendChild(col);
+  } else if(activeCtx==='inbox'){
+    const done=tasks.filter(t=>t.done&&t.context==='inbox');
+    board.appendChild(buildCol('Вхідні','var(--muted)',null,visible,done));
+  } else {
+    ENERGIES.forEach(en=>{
+      if(energyFilter!=='all'&&energyFilter!==en.id)return;
+      const list=visible.filter(t=>(t.energy||'medium')===en.id);
+      const done=tasks.filter(t=>t.done&&t.context===activeCtx&&(t.energy||'medium')===en.id);
+      const c=en.id==='low'?'var(--e-low)':en.id==='medium'?'var(--e-med)':'var(--e-high)';
+      board.appendChild(buildCol(en.icon+' '+en.lbl,c,en.id,list,done));
+    });
+  }
+
+  /* Focus mode */
+  if(focusMode){
+    document.querySelectorAll('.tcard').forEach(c=>{
+      const isDone = c.classList.contains('done-card');
+      const isTask = c.dataset.kind==='task';
+      c.classList.toggle('focus-match', isTask && !isDone);
+    });
+  }
+}
+
+function buildCol(title,color,energy,list,doneList){
+  const col=document.createElement('div');
+  col.className='col';
+  if(energy!==null)col.dataset.energy=energy||'';
+  col.addEventListener('dragover',e=>e.preventDefault());
+  col.addEventListener('drop',async e=>{
+    const id=e.dataTransfer.getData('tid');
+    if(!id)return;
+    const upd={context:activeCtx};
+    if(energy!==null)upd.energy=energy||'medium';
+    await sb.from('scanner_tasks').update(upd).eq('id',id);sync();
+  });
+  const head=document.createElement('div');head.className='col-head';
+  head.innerHTML=`<div class="col-title"><span class="col-dot" style="background:${color}"></span>${title}</div>
+    <span class="col-count">${list.length}</span>`;
+  col.appendChild(head);
+  const body=document.createElement('div');body.className='col-body';
+  if(!list.length){
+    body.innerHTML=`<div class="empty"><span style="font-size:1.5rem;opacity:.2">✓</span><span class="empty-lbl">Порожньо</span></div>`;
+  } else {
+    list.forEach(t=>body.appendChild(mkCard(t)));
+  }
+  col.appendChild(body);
+  const footer=document.createElement('div');footer.className='col-footer';
+  const qi=document.createElement('input');
+  qi.className='quick-inp';qi.placeholder='+ Швидко (Enter)...';
+  qi.addEventListener('keydown',async ev=>{
+    if(ev.key!=='Enter'||!qi.value.trim())return;
+    const user=(await sb.auth.getUser()).data.user;
+    await sb.from('scanner_tasks').insert([{
+      title:qi.value.trim(),context:activeCtx,
+      energy:energy||'medium',user_id:user.id,
+      project:projectFilter!=='all'?projectFilter:null
+    }]);
+    qi.value='';sync();
+  });
+  footer.appendChild(qi);col.appendChild(footer);
+  if(doneList.length){
+    const dr=document.createElement('div');dr.className='done-row';
+    dr.innerHTML=`<span class="done-row-lbl">Завершені (${doneList.length})</span><span class="done-row-arr">▶</span>`;
+    dr.onclick=()=>dr.classList.toggle('open');
+    const ds=document.createElement('div');ds.className='done-section';
+    doneList.forEach(t=>ds.appendChild(mkCard(t,true)));
+    col.appendChild(dr);col.appendChild(ds);
+  }
+  return col;
+}
+
+function mkCard(t,isDone=false){
+  const age=(Date.now()-new Date(t.created_at))/86400000;
+  const isStale=t.context==='inbox'&&age>3&&!t.done;
+  const el=document.createElement('div');
+  el.className='tcard'+(t.done?' done-card':'')+(isStale?' stale':'');
+  if(t.energy&&!t.done)el.dataset.e=t.energy;
+  el.dataset.kind=t.kind||'task';
+  const row=document.createElement('div');row.className='tc-row';
+  const cb=document.createElement('div');cb.className='tc-cb';
+  if(t.done)cb.textContent='✓';
+  cb.addEventListener('click',e=>{e.stopPropagation();toggleDone(t);});
+  const ttl=document.createElement('div');ttl.className='tc-title';
+  ttl.textContent=t.title+(isStale?' 🕸️':'');
+  row.appendChild(cb);row.appendChild(ttl);el.appendChild(row);
+  const meta=document.createElement('div');meta.className='tc-meta';
+  meta.innerHTML=`<span>${kIcon(t.kind||'task')} ${KINDS.find(k=>k.id===t.kind)?.lbl||'Задача'}</span>`;
+  if(t.project){const pb=document.createElement('span');pb.className='tc-proj';pb.textContent=t.project;meta.appendChild(pb);}
+  el.appendChild(meta);
+  if(t.note){const ns=document.createElement('div');ns.className='tc-note';ns.textContent=t.note;el.appendChild(ns);}
+  if(!t.done){
+    const ctxBtns=document.createElement('div');ctxBtns.className='tc-ctx-btns';
+    Object.entries(CTXS).filter(([k])=>k!==t.context).forEach(([k,v])=>{
+      const b=document.createElement('button');b.className='tc-ctx-btn';
+      b.textContent='→ '+v.lbl;
+      b.addEventListener('click',ev=>{ev.stopPropagation();moveCtx(t,k);});
+      ctxBtns.appendChild(b);
+    });
+    const tb=document.createElement('button');
+    tb.className='tc-ctx-btn tc-timer-btn';tb.textContent='🍅';
+    tb.title='Запустити таймер';
+    tb.addEventListener('click',ev=>{ev.stopPropagation();startTimer(t);});
+    ctxBtns.appendChild(tb);
+    el.appendChild(ctxBtns);
+  }
+  el.addEventListener('click',()=>openMod(t));
+  if(!t.done)mkDrag(el,t.id,t.title);
+  return el;
+}
+
+/* ── МУЗЕЙ (Variety Tracker) ── */
+function renderMuseum(){
+  const view=document.getElementById('museum-view');
+  view.innerHTML='';
+  const done=tasks.filter(t=>t.done).sort((a,b)=>new Date(b.done_at)-new Date(a.done_at));
+  if(!done.length){
+    view.innerHTML=`<div class="museum-empty">🏛<br><br>Тут з'являться твої завершені задачі.<br>Кожне завершення — це досвід, не просто галочка.</div>`;
+    return;
+  }
+  const byMonth={};
+  done.forEach(t=>{
+    const d=new Date(t.done_at||t.created_at);
+    const key=`${d.getFullYear()}-${d.getMonth()}`;
+    if(!byMonth[key])byMonth[key]={year:d.getFullYear(),month:d.getMonth(),tasks:[]};
+    byMonth[key].tasks.push(t);
+  });
+  Object.values(byMonth).forEach(({year,month,tasks:mt})=>{
+    const sec=document.createElement('div');sec.className='museum-month';
+    const ttl=document.createElement('div');ttl.className='museum-month-ttl';
+    
+    const uniqueProjects = new Set(mt.map(t => t.project).filter(Boolean));
+    const varietyCount = uniqueProjects.size;
+
+    ttl.innerHTML=`${UA_MONTHS[month]} 
+      <small>${year} · ${mt.length} завершено · ${varietyCount} сфер охоплено</small>`;
+    
+    sec.appendChild(ttl);
+    mt.forEach(t=>{
+      const d=new Date(t.done_at||t.created_at);
+      const card=document.createElement('div');card.className='museum-card';
+      card.title='Клік — повернути до активних';
+      card.innerHTML=`<span class="museum-card-kind">${kIcon(t.kind)}</span>
+        <span class="museum-card-ttl">${t.title}</span>
+        ${t.project?`<span class="museum-card-proj">${t.project}</span>`:''}
+        <span class="museum-card-date">${d.getDate()} ${UA_MONTHS[d.getMonth()].slice(0,3).toLowerCase()}</span>`;
+      card.onclick=()=>toggleDone(t);
+      sec.appendChild(card);
+    });
+    view.appendChild(sec);
+  });
+}
+
+/* ── ACTIONS ── */
+async function toggleDone(t){
+  const done=!t.done;
+  await sb.from('scanner_tasks').update({done,done_at:done?new Date().toISOString():null}).eq('id',t.id);
+  sync();
+}
+async function moveCtx(t,ctx){
+  await sb.from('scanner_tasks').update({context:ctx}).eq('id',t.id);sync();
+}
+
+/* ── MODAL (ОНОВЛЕНО З КНОПКОЮ ВІДМІНИ) ── */
+function openMod(t=null){
+  editId=t?.id??null;
+  const body=document.getElementById('mbody');
+  document.getElementById('modal').style.display='flex';
+  const knd=t?.kind||'task',en=t?.energy||'medium';
+  const projs=getProjects();
+  const projOpts=['<option value="">— без проєкту —</option>',
+    ...projs.map(p=>`<option${t?.project===p?' selected':''}>${p}</option>`)].join('');
+  body.innerHTML=`
+    <div class="mttl">${t?'Редагувати':'Нова'} задача</div>
+    <label class="ilbl">Назва</label>
+    <input id="m-ttl" class="inp" value="${(t?.title||'').replace(/"/g,'&quot;')}" placeholder="Що зробити?">
+    <label class="ilbl">Нотатка</label>
+    <textarea id="m-note" class="inp" placeholder="Деталі, посилання, думки...">${t?.note||''}</textarea>
+    <label class="ilbl">Тип</label>
+    <div class="seg" id="seg-k">
+      ${KINDS.map(k=>`<button type="button" class="seg-btn${knd===k.id?' on':''}" data-v="${k.id}" onclick="segSel('seg-k','m-kind',this)">
+        <span class="si">${k.icon}</span>${k.lbl}</button>`).join('')}
+    </div>
+    <input type="hidden" id="m-kind" value="${knd}">
+    <label class="ilbl">Енергія</label>
+    <div class="seg" id="seg-e">
+      ${ENERGIES.map(e=>`<button type="button" class="seg-btn${en===e.id?' on':''}" data-v="${e.id}" data-e="${e.id}" onclick="segSel('seg-e','m-energy',this)">
+        <span class="si">${e.icon}</span>${e.lbl}</button>`).join('')}
+    </div>
+    <input type="hidden" id="m-energy" value="${en}">
+    <div class="form-row">
+      <div>
+        <label class="ilbl">Контекст</label>
+        <select id="m-ctx" class="inp">
+          ${Object.entries(CTXS).map(([k,v])=>`<option value="${k}"${(t?.context||activeCtx)===k?' selected':''}>${v.lbl}</option>`).join('')}
+        </select>
+      </div>
+      <div>
+        <label class="ilbl">Проєкт</label>
+        <select id="m-proj" class="inp">${projOpts}</select>
+        <input id="m-proj-new" class="inp" style="margin-top:.35rem;font-family:'JetBrains Mono',monospace;font-size:.7rem;" placeholder="або введи новий...">
+      </div>
+    </div>
+    ${t?`<label class="done-toggle-wrap"><input type="checkbox" id="m-done" ${t.done?'checked':''}>
+      <span class="dttrack"></span><span class="dtlbl">Завершено</span></label>`:''}
+    
+    <div style="display:flex; gap:.5rem; margin-top:.75rem;">
+      <button class="pbtn" onclick="saveTask()" style="flex:2;">Зберегти</button>
+      <button class="pbtn secondary" onclick="closeMod()" style="flex:1;">Відмінити</button>
+    </div>
+    ${t?`<button class="delbtn" onclick="delTask('${t.id}')">Видалити задачу</button>`:''}`;
+  setTimeout(()=>document.getElementById('m-ttl')?.focus(),40);
+}
+function segSel(segId,hidId,btn){
+  document.getElementById(segId).querySelectorAll('.seg-btn').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');document.getElementById(hidId).value=btn.dataset.v;
+}
+function closeMod(){document.getElementById('modal').style.display='none';editId=null;}
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeMod();timerClose();}});
+
+async function saveTask(){
+  const ttlEl=document.getElementById('m-ttl');
+  if(!ttlEl?.value?.trim()){ttlEl?.focus();return;}
+  const user=(await sb.auth.getUser()).data.user;
+
+  const projNew=(document.getElementById('m-proj-new')?.value||'').trim();
+  const projSel=document.getElementById('m-proj')?.value||'';
+  const project=projNew||projSel||null;
+  const done=document.getElementById('m-done')?.checked||false;
+  const d={
+    title:ttlEl.value.trim(),
+    note:document.getElementById('m-note')?.value?.trim()||null,
+    kind:document.getElementById('m-kind')?.value||'task',
+    energy:document.getElementById('m-energy')?.value||'medium',
+    context:document.getElementById('m-ctx')?.value||'inbox',
+    project,done,done_at:done?new Date().toISOString():null,user_id:user.id,
+  };
+  const{error}=editId
+    ?await sb.from('scanner_tasks').update(d).eq('id',editId)
+    :await sb.from('scanner_tasks').insert([d]);
+  if(error){alert('Помилка: '+error.message);return;}
+  closeMod();sync();
+}
+async function delTask(id){
+  if(!confirm('Видалити задачу?'))return;
+  await sb.from('scanner_tasks').delete().eq('id',id);closeMod();sync();
+}
+
+initTheme();
+</script>
+</body>
+</html>
