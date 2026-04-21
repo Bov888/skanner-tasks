@@ -1,13 +1,7 @@
-const CACHE_NAME = 'scanner-v1';
-
-self.addEventListener('install', (e) => {
-  e.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(['/']))
-  );
+self.addEventListener('install', (event) => {
+  self.skipWaiting();
 });
 
-self.addEventListener('fetch', (e) => {
-  e.respondWith(
-    caches.match(e.request).then((response) => response || fetch(e.request))
-  );
+self.addEventListener('fetch', (event) => {
+  // Це дозволяє додатку завантажуватися швидше
 });
