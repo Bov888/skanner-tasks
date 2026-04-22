@@ -345,31 +345,13 @@
   .tcard[data-e=high]::before{background:var(--e-high);}
   .tcard.stale{opacity:.55;border-style:dashed;}
   
-  /* СТИЛІ ДЛЯ ЗАВЕРШЕНИХ ЗАДАЧ (ПОВНЕ ПЕРЕКРЕСЛЕННЯ) */
   .tcard.done-card {
-    opacity: .45;
-    background: var(--surface);
-    color: var(--muted);
-    text-decoration: line-through;
+    opacity: .45; background: var(--surface); color: var(--muted); text-decoration: line-through;
   }
-  .tcard.done-card .tc-title {
-    color: var(--muted);
-  }
-  .tcard.done-card::before {
-    background: var(--border) !important;
-  }
-  .tcard.done-card .tc-proj {
-    background: transparent;
-    border: 1px solid var(--border);
-    color: var(--muted);
-  }
-  .tcard.done-card .tc-cb {
-    text-decoration: none; /* Галочка без перекреслення */
-    background: var(--accent);
-    border-color: var(--accent);
-    color: #fff;
-  }
-  
+  .tcard.done-card .tc-title { color: var(--muted); }
+  .tcard.done-card::before { background: var(--border) !important; }
+  .tcard.done-card .tc-proj { background: transparent; border: 1px solid var(--border); color: var(--muted); }
+  .tcard.done-card .tc-cb { text-decoration: none; background: var(--accent); border-color: var(--accent); color: #fff; }
   .tcard.dragging{opacity:.3;transform:scale(.97);}
 
   .tc-row{display:flex;align-items:flex-start;gap:.5rem;margin-bottom:.3rem;}
@@ -414,9 +396,7 @@
 
   /* Focus mode */
   body.focus-mode .tcard:not(.focus-match){
-    opacity:0.15;
-    pointer-events:none;
-    filter:blur(1px) grayscale(100%);
+    opacity:0.15; pointer-events:none; filter:blur(1px) grayscale(100%);
   }
   body.focus-mode .done-row,
   body.focus-mode .done-section {
@@ -513,40 +493,37 @@
   .timer-btn:hover{border-color:var(--accent);color:var(--accent);}
   .timer-btn.primary:hover{opacity:.85;}
 
+  /* ── SPOTLIGHT (QUICK CAPTURE) ── */
+  #spotlight-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,.4); z-index: 9500;
+    display: none; align-items: flex-start; justify-content: center;
+    padding-top: 18vh; backdrop-filter: blur(5px);
+  }
+  .spotlight-card {
+    background: var(--surface); border: 1px solid var(--accent); border-radius: 8px;
+    width: 90%; max-width: 600px; display: flex; align-items: center; padding: .5rem 1.2rem;
+    box-shadow: 0 20px 40px rgba(0,0,0,.3);
+    transform: translateY(-20px); animation: spotAnim .2s cubic-bezier(0.2,0.8,0.2,1) forwards;
+  }
+  @keyframes spotAnim { to { transform: translateY(0); } }
+  .spotlight-icon { font-size: 1.5rem; margin-right: 1rem; opacity: .8; }
+  .spotlight-input {
+    flex: 1; background: transparent; border: none; color: var(--text);
+    font-family: 'Literata', Georgia, serif; font-size: 1.3rem; font-weight: 300;
+    padding: .8rem 0; outline: none;
+  }
+  .spotlight-input::placeholder { color: var(--muted); opacity: .6; }
+
   /* ── FAB ── */
   #fab {
-    position: fixed;
-    bottom: 1.5rem;
-    right: 1.5rem;
-    width: 48px; 
-    height: 48px;
-    padding: 0;
-    border-radius: 2px;
-    background: var(--accent);
-    color: #fff;
-    border: none;
-    cursor: pointer;
-    z-index: 500;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: 0 4px 18px rgba(0,0,0,.18);
-    transition: all .15s;
-    touch-action: manipulation;
+    position: fixed; bottom: 1.5rem; right: 1.5rem; width: 48px; height: 48px;
+    padding: 0; border-radius: 2px; background: var(--accent); color: #fff;
+    border: none; cursor: pointer; z-index: 500; display: flex; align-items: center;
+    justify-content: center; box-shadow: 0 4px 18px rgba(0,0,0,.18); transition: all .15s;
   }
-  #fab::before {
-    content: '＋';
-    font-size: 1.8rem;
-    line-height: 1;
-  }
-  #fab:hover {
-    background: var(--accent-mid);
-    transform: translateY(-2px);
-    box-shadow: 0 6px 22px rgba(0,0,0,.22);
-  }
-  #fab:active {
-    transform: translateY(0);
-  }
+  #fab::before { content: '＋'; font-size: 1.8rem; line-height: 1; }
+  #fab:hover { background: var(--accent-mid); transform: translateY(-2px); box-shadow: 0 6px 22px rgba(0,0,0,.22); }
+  #fab:active { transform: translateY(0); }
 
   /* ── MODAL ── */
   .modal{
@@ -604,7 +581,7 @@
   .done-toggle-wrap input{display:none;}
   .dttrack{width:32px;height:18px;background:var(--border);border-radius:9px;
     position:relative;transition:background .2s;flex-shrink:0;}
-  .dttrack::after{content:'';position:absolute;top:2px;left:2px;
+  .dttrack::after{content:'absolute';top:2px;left:2px;
     width:14px;height:14px;border-radius:50%;background:#fff;transition:transform .2s;}
   .done-toggle-wrap input:checked+.dttrack{background:var(--accent);}
   .done-toggle-wrap input:checked+.dttrack::after{transform:translateX(14px);}
@@ -622,14 +599,10 @@
     color: var(--muted);
     border: 1px solid var(--border);
   }
-  .pbtn.secondary:hover {
-    border-color: var(--accent);
-    color: var(--accent);
-  }
+  .pbtn.secondary:hover { border-color: var(--accent); color: var(--accent); }
   .delbtn{font-family:'JetBrains Mono',monospace;font-size:.56rem;
     letter-spacing:.06em;text-transform:uppercase;color:var(--error);
-    background:none;cursor:pointer;padding:0;
-    margin-top:.75rem;width:100%;text-align:center;}
+    background:none;cursor:pointer;padding:0; margin-top:.75rem;width:100%;text-align:center;}
   .aerr{color:var(--error);font-family:'JetBrains Mono',monospace;
     font-size:.65rem;margin-top:.75rem;text-align:center;}
   .ldg{font-family:'JetBrains Mono',monospace;font-size:.65rem;
@@ -664,6 +637,13 @@
 </div>
 
 <div id="overlay"></div>
+
+<div id="spotlight-overlay" onclick="if(event.target===this)closeSpotlight()">
+  <div class="spotlight-card">
+    <span class="spotlight-icon">✨</span>
+    <input type="text" id="spotlight-inp" class="spotlight-input" placeholder="Швидка ідея чи задача... (Enter)" autocomplete="off">
+  </div>
+</div>
 
 <div id="timer-overlay">
   <div class="timer-card">
@@ -918,7 +898,6 @@ function renderProjectChips(){
   const allBtn=document.createElement('button');
   allBtn.className='sb-chip'+(projectFilter==='all'?' on':'');
   allBtn.dataset.p='all';allBtn.onclick=()=>setPFilter('all');
-  // Показуємо лише активні задачі (!t.done)
   allBtn.innerHTML=`<span class="chip-ct">Всі проєкти</span><span class="chip-n">${tasks.filter(t=>!t.done).length}</span>`;
   container.appendChild(allBtn);
 
@@ -1087,6 +1066,55 @@ function startTimer(task=null){
   if(Notification.permission==='default')Notification.requestPermission();
 }
 
+/* ── SPOTLIGHT (QUICK CAPTURE) ── */
+function openSpotlight() {
+  const overlay = document.getElementById('spotlight-overlay');
+  overlay.style.display = 'flex';
+  setTimeout(() => document.getElementById('spotlight-inp').focus(), 50);
+}
+function closeSpotlight() {
+  document.getElementById('spotlight-overlay').style.display = 'none';
+  document.getElementById('spotlight-inp').value = '';
+}
+
+document.addEventListener('keydown', e => {
+  // Закриваємо вікна по Esc
+  if (e.key === 'Escape') { 
+    closeMod(); 
+    timerClose(); 
+    closeSpotlight(); 
+  }
+  // Відкриваємо Spotlight на Ctrl+Space або Cmd+Space
+  if ((e.ctrlKey || e.metaKey) && e.code === 'Space') {
+    e.preventDefault();
+    if (document.getElementById('spotlight-overlay').style.display === 'flex') {
+      closeSpotlight();
+    } else {
+      openSpotlight();
+    }
+  }
+});
+
+document.getElementById('spotlight-inp').addEventListener('keydown', async e => {
+  if (e.key === 'Enter') {
+    const val = e.target.value.trim();
+    if (!val) return;
+    const user = (await sb.auth.getUser()).data.user;
+    
+    // Зберігаємо нову ідею у Вхідні
+    await sb.from('scanner_tasks').insert([{
+      title: val,
+      context: 'inbox',
+      energy: 'medium',
+      kind: 'task', // За замовчуванням ставимо як задачу
+      user_id: user.id
+    }]);
+    
+    closeSpotlight();
+    sync();
+  }
+});
+
 /* ══ DRAG & DROP ══ */
 let D={on:false,drag:false,id:null,ghost:null,tgt:null,x0:0,y0:0,lbl:'',ht:null};
 
@@ -1252,7 +1280,6 @@ function mkCard(t,isDone=false){
   const ttl=document.createElement('div');ttl.className='tc-title';
   ttl.textContent=t.title+(isStale?' 🕸️':'');
   
-  // Додаємо елементи в зворотному порядку, щоб галочка була праворуч
   row.appendChild(ttl);
   row.appendChild(cb);
   el.appendChild(row);
@@ -1390,7 +1417,6 @@ function segSel(segId,hidId,btn){
   btn.classList.add('on');document.getElementById(hidId).value=btn.dataset.v;
 }
 function closeMod(){document.getElementById('modal').style.display='none';editId=null;}
-document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeMod();timerClose();}});
 
 async function saveTask(){
   const ttlEl=document.getElementById('m-ttl');
